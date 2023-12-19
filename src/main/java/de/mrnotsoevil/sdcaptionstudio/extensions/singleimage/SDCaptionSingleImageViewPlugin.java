@@ -10,7 +10,7 @@ import org.scijava.plugin.Plugin;
 import javax.swing.*;
 
 @Plugin(type = SDCaptionEditorPlugin.class, priority = Priority.FIRST)
-public class SDCaptionSingleImageCaptionEditorPlugin implements SDCaptionEditorPlugin {
+public class SDCaptionSingleImageViewPlugin implements SDCaptionEditorPlugin {
     @Override
     public String getEditorName() {
         return "Single image";
@@ -28,6 +28,6 @@ public class SDCaptionSingleImageCaptionEditorPlugin implements SDCaptionEditorP
 
     @Override
     public SDCaptionProjectWorkbenchPanel createEditor(SDCaptionProjectWorkbench workbench) {
-        return new SDCaptionSingleImageCaptionEditor(workbench);
+        return new SDCaptionSingleImageView(workbench);
     }
 }

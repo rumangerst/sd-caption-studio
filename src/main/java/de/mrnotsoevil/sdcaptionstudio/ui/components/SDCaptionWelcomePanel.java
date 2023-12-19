@@ -13,7 +13,7 @@
 
 package de.mrnotsoevil.sdcaptionstudio.ui.components;
 
-import de.mrnotsoevil.sdcaptionstudio.SDCaptionStudio;
+import de.mrnotsoevil.sdcaptionstudio.ui.utils.SDCaptionUtils;
 import de.mrnotsoevil.sdcaptionstudio.ui.SDCaptionProjectWindow;
 import ij.IJ;
 import org.hkijena.jipipe.extensions.settings.FileChooserSettings;
@@ -61,9 +61,9 @@ public class SDCaptionWelcomePanel extends JPanel {
         BufferedImage backgroundImage;
         try {
             if (UIUtils.DARK_THEME) {
-                backgroundImage = ImageIO.read(SDCaptionStudio.RESOURCES.getResourceAsStream("welcome-hero-dark.png"));
+                backgroundImage = ImageIO.read(SDCaptionUtils.RESOURCES.getResourceAsStream("welcome-hero-dark.png"));
             } else {
-                backgroundImage = ImageIO.read(SDCaptionStudio.RESOURCES.getResourceAsStream("welcome-hero.png"));
+                backgroundImage = ImageIO.read(SDCaptionUtils.RESOURCES.getResourceAsStream("welcome-hero.png"));
             }
         } catch (Throwable e) {
             backgroundImage = null;

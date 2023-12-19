@@ -1,103 +1,93 @@
 package de.mrnotsoevil.sdcaptionstudio.extensions.singleimage;
 
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionedImage;
-import de.mrnotsoevil.sdcaptionstudio.ui.imagelist.SDCaptionedImageListPanel;
 import de.mrnotsoevil.sdcaptionstudio.ui.SDCaptionProjectWorkbench;
 import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionProjectWorkbenchPanel;
+import de.mrnotsoevil.sdcaptionstudio.ui.utils.SDCaptionSyntaxTokenMaker;
+import de.mrnotsoevil.sdcaptionstudio.ui.utils.SDCaptionUtils;
+import ij.IJ;
+import ij.ImagePlus;
+import org.fife.ui.rsyntaxtextarea.RSyntaxDocument;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.TokenMaker;
+import org.fife.ui.rsyntaxtextarea.TokenMakerFactory;
+import org.fife.ui.rtextarea.RTextScrollPane;
+import org.hkijena.jipipe.extensions.imageviewer.JIPipeImageViewer;
+import org.hkijena.jipipe.extensions.imageviewer.plugins2d.CalibrationPlugin2D;
+import org.hkijena.jipipe.extensions.imageviewer.plugins2d.PixelInfoPlugin2D;
 import org.hkijena.jipipe.utils.AutoResizeSplitPane;
-import org.scijava.Disposable;
+import org.hkijena.jipipe.utils.UIUtils;
+import org.hkijena.jipipe.utils.ui.BusyCursor;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Set;
 
-public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbenchPanel implements Disposable {
-    private final JPanel propertiesPanel = new JPanel(new BorderLayout());
-    private final SDCaptionedImageListPanel imageListPanel;
-    private final SDCaptionSingleImageCaptionEditorImageViewer captionEditorUI;
+public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbenchPanel {
+    private SDCaptionedImage currentlyEditedImage;
+    private final JIPipeImageViewer imageViewer;
+    private final RSyntaxTextArea captionEditor;
 
     public SDCaptionSingleImageCaptionEditor(SDCaptionProjectWorkbench workbench) {
         super(workbench);
-        this.imageListPanel = new SDCaptionedImageListPanel(workbench);
-        captionEditorUI = new SDCaptionSingleImageCaptionEditorImageViewer(workbench);
+        this.imageViewer = new JIPipeImageViewer(workbench,
+                Arrays.asList(CalibrationPlugin2D.class,
+                        PixelInfoPlugin2D.class),
+                Collections.emptyMap());
+
+
+        SDCaptionSyntaxTokenMaker tokenMaker = new SDCaptionSyntaxTokenMaker();
+        TokenMakerFactory tokenMakerFactory = new TokenMakerFactory() {
+            @Override
+            protected TokenMaker getTokenMakerImpl(String key) {
+                return tokenMaker;
+            }
+
+            @Override
+            public Set<String> keySet() {
+                return Collections.singleton("text/caption");
+            }
+        };
+        this.captionEditor = new RSyntaxTextArea(new RSyntaxDocument(tokenMakerFactory, "text/caption"));
+
+        // Remove the 2d/3d switcher
+        imageViewer.getToolBar().remove(0);
+
         initialize();
     }
 
     private void initialize() {
         setLayout(new BorderLayout());
-        AutoResizeSplitPane splitPane = new AutoResizeSplitPane(AutoResizeSplitPane.LEFT_RIGHT,
-                imageListPanel,
-                propertiesPanel,
-                new AutoResizeSplitPane.DynamicSidebarRatio(400, true));
-        add(splitPane, BorderLayout.CENTER);
+        JPanel promptEditorPanel = new JPanel(new BorderLayout());
+        add(new AutoResizeSplitPane(AutoResizeSplitPane.TOP_BOTTOM, imageViewer, promptEditorPanel,
+                new AutoResizeSplitPane.DynamicSidebarRatio(350, false)), BorderLayout.CENTER);
 
-        JToolBar toolBar = new JToolBar();
-        toolBar.setFloatable(false);
-        add(toolBar, BorderLayout.NORTH);
 
-//        JButton saveButton = UIUtils.createButton("Save", UIUtils.getIconFromResources("actions/save.png"), this::saveAll);
-//        saveButton.setToolTipText("Saves all edited captions");
-//        toolBar.add(saveButton);
-
-//        autoSaveButton.setToolTipText("If enabled, automatically save all changes to captions");
-//        toolBar.add(autoSaveButton);
-
-//        toolBar.addSeparator();
-
-//        JButton dumpButton = UIUtils.createButton("Emergency dump", UIUtils.getIconFromResources("actions/document-export.png"), this::emergencyDump);
-//        dumpButton.setToolTipText("Use this function if the directory structure was messed up by a script or other tool.\n" +
-//               "Dumps all captions into a dedicated directory.");
-//        toolBar.add(dumpButton);
-
-//        toolBar.add(UIUtils.createButton("Reset", UIUtils.getIconFromResources("actions/edit-undo.png"), this::resetProject));
-
-//        toolBar.add(Box.createHorizontalGlue());
-//        toolBar.add(UIUtils.createButton("Open directory", UIUtils.getIconFromResources("actions/project-open.png"), this::openProjectDirectory));
-
-        propertiesPanel.setLayout(new BorderLayout());
-        propertiesPanel.add(captionEditorUI, BorderLayout.CENTER);
-
-        imageListPanel.addListSelectionListener(this::editCaption);
+        SDCaptionUtils.applyThemeToCodeEditor(captionEditor);
+        captionEditor.setLineWrap(true);
+        captionEditor.setWrapStyleWord(false);
+        captionEditor.setTabSize(4);
+        captionEditor.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 14));
+        captionEditor.setBackground(UIManager.getColor("TextArea.background"));
+        captionEditor.setHighlightCurrentLine(true);
+        promptEditorPanel.add(new RTextScrollPane(captionEditor), BorderLayout.CENTER);
     }
 
-//    private void resetProject() {
-//        if(JOptionPane.showConfirmDialog(this, "Do you really want to reset this project?\n" +
-//                "Please note that this will not help if you have auto-save enabled.",
-//                "Reset project",
-//                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_NO_OPTION) {
-//            project.reset();
-//            projectFilesPanel.reload();
-//        }
-//    }
-//
-//    private void emergencyDump() {
-//
-//    }
-//
-//    private void openProjectDirectory() {
-//        try {
-//            Desktop.getDesktop().open(project.getStoragePath().toFile());
-//        } catch (IOException e) {
-//            IJ.handleException(e);
-//        }
-//    }
+    public void editCaption(SDCaptionedImage captionedImage) {
+        this.currentlyEditedImage = captionedImage;
+        this.captionEditor.setText(captionedImage.getCaption());
+        reload();
+    }
 
-//    public void saveAll() {
-//        project.commitAll();
-//        getWorkbench().sendStatusBarText("Saved all captions");
-//    }
-//
-//    public SDCaptionProject getProject() {
-//        return project;
-//    }
-//
-//    @Override
-//    public void dispose() {
-//        project.dispose();
-//    }
-
-    public void editCaption(SDCaptionedImage value) {
-        if(value != null) {
-            captionEditorUI.editCaption(value);
+    public void reload() {
+        try(BusyCursor cursor = new BusyCursor(SwingUtilities.getWindowAncestor(this))) {
+            ImagePlus image = IJ.openImage(currentlyEditedImage.getImagePath().toString());
+            imageViewer.setImagePlus(image);
+        }
+        catch (Exception e) {
+            IJ.handleException(e);
         }
     }
 }

@@ -13,7 +13,7 @@
 
 package de.mrnotsoevil.sdcaptionstudio.ui.components;
 
-import de.mrnotsoevil.sdcaptionstudio.SDCaptionStudio;
+import de.mrnotsoevil.sdcaptionstudio.ui.utils.SDCaptionUtils;
 import org.hkijena.jipipe.JIPipe;
 import org.hkijena.jipipe.JIPipeJavaExtension;
 import org.hkijena.jipipe.JIPipeService;
@@ -174,7 +174,7 @@ public class SDCaptionSplashScreen extends JWindow implements LogListener, Conte
             setOpaque(false);
             setLayout(null);
             try {
-                backgroundImage = ImageIO.read(SDCaptionStudio.RESOURCES.getResourceAsStream("splash-screen.png"));
+                backgroundImage = ImageIO.read(SDCaptionUtils.RESOURCES.getResourceAsStream("splash-screen.png"));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

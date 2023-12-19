@@ -14,7 +14,7 @@
 package de.mrnotsoevil.sdcaptionstudio.ui;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import de.mrnotsoevil.sdcaptionstudio.SDCaptionStudio;
+import de.mrnotsoevil.sdcaptionstudio.ui.utils.SDCaptionUtils;
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionProject;
 import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionWelcomePanel;
 import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionSplashScreen;
@@ -116,7 +116,7 @@ public class SDCaptionProjectWindow extends JFrame {
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         getContentPane().setLayout(new BorderLayout(8, 8));
         updateTitle();
-        setIconImage(SDCaptionStudio.getInstance().getApplicationIcon().getImage());
+        setIconImage(SDCaptionUtils.getInstance().getApplicationIcon().getImage());
         UIUtils.setToAskOnClose(this, () -> {
             if (projectUI != null && projectUI.isProjectModified()) {
                 return "Do you really want to close SD Caption Studio?\nThere are some unsaved changes.";
