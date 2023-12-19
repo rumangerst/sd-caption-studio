@@ -1,19 +1,52 @@
 package de.mrnotsoevil.sdcaptionstudio.api;
 
+import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionedImageInfoUpdatedEvent;
 import org.hkijena.jipipe.utils.StringUtils;
+import org.hkijena.jipipe.utils.UIUtils;
 
 import java.nio.file.Path;
 
 public class SDCaptionedImage {
 
+    private SDCaptionProject project;
     private String name;
     private Path imagePath;
-
     private Path captionPath;
     private String caption = "";
-
     private int numTokens;
     private boolean captionEdited;
+    private SDCaptionedImageInfo currentImageInfo;
+
+    private SDCaptionedImageInfoLoader imageInfoLoader;
+
+    public SDCaptionedImageInfo getCurrentImageInfo() {
+        return currentImageInfo;
+    }
+
+    public void setCurrentImageInfo(SDCaptionedImageInfo currentImageInfo) {
+        this.currentImageInfo = currentImageInfo;
+        if(project != null) {
+            project.getCaptionedImageInfoUpdatedEventEmitter().emit(new SDCaptionedImageInfoUpdatedEvent(this));
+        }
+    }
+
+    public SDCaptionedImageInfo getImageInfoForUI() {
+        if(currentImageInfo != null) {
+            return currentImageInfo;
+        }
+        else {
+            synchronized (this) {
+                if(imageInfoLoader == null) {
+                    imageInfoLoader = new SDCaptionedImageInfoLoader(this, 64);
+                    imageInfoLoader.execute();
+                }
+                SDCaptionedImageInfo info = new SDCaptionedImageInfo();
+                info.setSize("Loading ...");
+                info.setThumbnail(UIUtils.getIcon16FromResources("actions/hourglass-half.png"));
+                return info;
+            }
+        }
+    }
 
     public String getName() {
         return name;
@@ -58,5 +91,13 @@ public class SDCaptionedImage {
 
     public void setCaptionPath(Path captionPath) {
         this.captionPath = captionPath;
+    }
+
+    public SDCaptionProject getProject() {
+        return project;
+    }
+
+    public void setProject(SDCaptionProject project) {
+        this.project = project;
     }
 }

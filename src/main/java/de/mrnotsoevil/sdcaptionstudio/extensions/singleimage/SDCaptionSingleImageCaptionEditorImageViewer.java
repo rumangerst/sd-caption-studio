@@ -1,6 +1,8 @@
-package de.mrnotsoevil.sdcaptionstudio.ui;
+package de.mrnotsoevil.sdcaptionstudio.extensions.singleimage;
 
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionedImage;
+import de.mrnotsoevil.sdcaptionstudio.ui.SDCaptionProjectWorkbench;
+import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionProjectWorkbenchPanel;
 import ij.IJ;
 import ij.ImagePlus;
 import org.hkijena.jipipe.extensions.imageviewer.JIPipeImageViewer;
@@ -15,19 +17,20 @@ import java.awt.*;
 import java.util.Arrays;
 import java.util.Collections;
 
-public class SDCaptionEditorUI extends JPanel {
-    private final SDCaptionProjectUI projectUI;
+public class SDCaptionSingleImageCaptionEditorImageViewer extends SDCaptionProjectWorkbenchPanel {
     private SDCaptionedImage currentlyEditedImage;
-
     private final JIPipeImageViewer imageViewer;
 
-    public SDCaptionEditorUI(SDCaptionProjectUI projectUI) {
-        this.projectUI = projectUI;
-        this.imageViewer = new JIPipeImageViewer(projectUI.getWorkbench(),
+    public SDCaptionSingleImageCaptionEditorImageViewer(SDCaptionProjectWorkbench workbench) {
+        super(workbench);
+        this.imageViewer = new JIPipeImageViewer(workbench,
                 Arrays.asList(CalibrationPlugin2D.class,
-                        PixelInfoPlugin2D.class,
-                        LUTManagerPlugin2D.class),
+                        PixelInfoPlugin2D.class),
                 Collections.emptyMap());
+
+        // Remove the 2d/3d switcher
+        imageViewer.getToolBar().remove(0);
+
         initialize();
     }
 

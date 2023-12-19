@@ -1,4 +1,4 @@
-package de.mrnotsoevil.sdcaptionstudio.ui;
+package de.mrnotsoevil.sdcaptionstudio.ui.components;
 
 import org.hkijena.jipipe.utils.UIUtils;
 

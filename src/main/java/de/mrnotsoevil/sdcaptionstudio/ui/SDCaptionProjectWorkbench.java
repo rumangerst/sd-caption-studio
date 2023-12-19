@@ -1,15 +1,21 @@
 package de.mrnotsoevil.sdcaptionstudio.ui;
 
-import de.mrnotsoevil.sdcaptionstudio.SDCaptionStudio;
+import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionEditorPlugin;
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionProject;
+import de.mrnotsoevil.sdcaptionstudio.ui.components.CustomRecentProjectsMenu;
+import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionProjectWorkbenchPanel;
+import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionWelcomePanel;
+import ij.IJ;
 import org.hkijena.jipipe.JIPipe;
+import org.hkijena.jipipe.JIPipeJavaExtension;
+import org.hkijena.jipipe.api.notifications.JIPipeNotification;
 import org.hkijena.jipipe.api.notifications.JIPipeNotificationInbox;
 import org.hkijena.jipipe.extensions.settings.FileChooserSettings;
-import org.hkijena.jipipe.extensions.settings.ProjectsSettings;
 import org.hkijena.jipipe.ui.JIPipeWorkbench;
 import org.hkijena.jipipe.ui.components.MemoryStatusUI;
 import org.hkijena.jipipe.ui.components.tabs.DocumentTabPane;
-import org.hkijena.jipipe.ui.data.MemoryOptionsControl;
+import org.hkijena.jipipe.ui.notifications.NotificationButton;
+import org.hkijena.jipipe.ui.notifications.WorkbenchNotificationInboxUI;
 import org.hkijena.jipipe.ui.running.JIPipeRunnerQueueButton;
 import org.hkijena.jipipe.ui.settings.JIPipeApplicationSettingsUI;
 import org.hkijena.jipipe.utils.UIUtils;
@@ -17,6 +23,9 @@ import org.jdesktop.swingx.JXStatusBar;
 import org.jdesktop.swingx.plaf.basic.BasicStatusBarUI;
 import org.scijava.Context;
 import org.scijava.Contextual;
+import org.scijava.InstantiableException;
+import org.scijava.plugin.PluginInfo;
+import org.scijava.plugin.PluginService;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,74 +35,115 @@ import java.awt.event.WindowEvent;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
-public class SDCaptionWorkbench extends JFrame implements JIPipeWorkbench, Contextual {
+public class SDCaptionProjectWorkbench extends JPanel implements JIPipeWorkbench, Contextual {
 
+    public static final String TAB_NOTIFICATIONS = "NOTIFICATIONS";
+    private final SDCaptionProjectWindow window;
     private final Context context;
     private final DocumentTabPane documentTabPane = new DocumentTabPane();
     private final JLabel statusText = new JLabel("Ready");
-    public SDCaptionWorkbench(Context context) {
+    private final SDCaptionProject project;
+    private final JMenuBar menuBar = new JMenuBar();
+
+    public SDCaptionProjectWorkbench(SDCaptionProjectWindow window, Context context, SDCaptionProject project) {
+        this.window = window;
         this.context = context;
+        this.project = project;
+
+        // Fully resets the project and loads all images
+        project.reset();
+
+        // Initialize
         initialize();
+        sendStatusBarText("Loaded/Created project " + project.getProjectFilePath());
     }
 
     private void initialize() {
-
-        // Window initialization
-        setTitle("SD Caption Studio");
-        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        setIconImage(SDCaptionStudio.getInstance().getApplicationIcon().getImage());
-        setSize(1024, 768);
-        UIUtils.setToAskOnClose(this, () -> "Do you really want to close SD Caption Studio?", "Close window");
-
-        // Tab pane and projects
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.add(documentTabPane, BorderLayout.CENTER);
+        setLayout(new BorderLayout());
 
         // Toolbar
-        JMenuBar menuBar = new JMenuBar();
+
         menuBar.setBorderPainted(false);
         initializeMenuBar(menuBar);
-        panel.add(menuBar, BorderLayout.NORTH);
+        add(menuBar, BorderLayout.NORTH);
 
         // Status bar
-        initializeStatusBar(panel);
+        initializeStatusBar();
+        add(documentTabPane, BorderLayout.CENTER);
 
-        // init welcome panel
-        documentTabPane.registerSingletonTab("WELCOME",
-                "Getting started",
-                UIUtils.getIconFromResources("actions/help-info.png"),
-                () -> new CustomWelcomePanel(this),
-                DocumentTabPane.CloseMode.withSilentCloseButton,
-                DocumentTabPane.SingletonTabMode.Present);
+        initializeSingletonTabs();
+        initializeEditors();
+    }
 
-        setContentPane(panel);
+    private void initializeSingletonTabs() {
+        documentTabPane.registerSingletonTab(TAB_NOTIFICATIONS,
+                "Notifications",
+                UIUtils.getIconFromResources("emblems/warning.png"),
+                () -> new WorkbenchNotificationInboxUI(this),
+                DocumentTabPane.SingletonTabMode.Hidden);
+    }
+
+    private void initializeEditors() {
+        JMenu editorsMenu = new JMenu("Edit");
+        menuBar.add(editorsMenu, 1);
+
+        PluginService pluginService = getContext().getService(PluginService.class);
+        List<PluginInfo<SDCaptionEditorPlugin>> pluginList = pluginService.getPluginsOfType(SDCaptionEditorPlugin.class).stream()
+                .sorted(JIPipe::comparePlugins).collect(Collectors.toList());
+
+        for (PluginInfo<SDCaptionEditorPlugin> pluginInfo : pluginList) {
+            String identifier = pluginInfo.getIdentifier();
+            try {
+                SDCaptionEditorPlugin plugin = pluginInfo.createInstance();
+                SDCaptionProjectWorkbenchPanel editor = plugin.createEditor(this);
+                documentTabPane.registerSingletonTab("TAB_EDITOR_" + identifier,
+                        plugin.getEditorName(),
+                        plugin.getEditorIcon(),
+                        () -> editor,
+                        DocumentTabPane.CloseMode.withSilentCloseButton,
+                        DocumentTabPane.SingletonTabMode.Present);
+                editorsMenu.add(UIUtils.createMenuItem(plugin.getEditorName(),
+                        plugin.getEditorDescription(),
+                        plugin.getEditorIcon(),
+                        () -> documentTabPane.selectSingletonTab("TAB_EDITOR_" + identifier)));
+            } catch (InstantiableException e) {
+                IJ.handleException(e);
+                JIPipeNotification notification = new JIPipeNotification("editor-init-error-" + identifier);
+                notification.setHeading("Unable to load editor");
+                notification.setDescription("The editor component for " + pluginInfo + " could not be loaded. Please contact the plugin author.");
+                getNotificationInbox().push(notification);
+            }
+        }
+    }
+
+    public SDCaptionProject getProject() {
+        return project;
     }
 
     private void initializeMenuBar(JMenuBar menuBar) {
         JMenu projectMenu = new JMenu("Project");
 
-        JMenuItem newItem = UIUtils.createMenuItem("New", "Creates a new directory",UIUtils.getIconFromResources("actions/document-new.png"), this::newProject);
-        newItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, KeyEvent.CTRL_DOWN_MASK));
-        projectMenu.add(newItem);
+        JMenuItem openDirectoryItem = UIUtils.createMenuItem("Open directory ...", "Opens an existing directory",UIUtils.getIconFromResources("actions/project-open.png"), this::openDirectory);
+        openDirectoryItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, KeyEvent.CTRL_DOWN_MASK));
+        projectMenu.add(openDirectoryItem);
 
-        JMenuItem openItem = UIUtils.createMenuItem("Open", "Opens a new directory",UIUtils.getIconFromResources("actions/project-open.png"), this::openDirectory);
-        openItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, KeyEvent.CTRL_DOWN_MASK));
-        projectMenu.add(openItem);
+        JMenuItem openProjectItem = UIUtils.createMenuItem("Open project ...", "Opens an existing project",UIUtils.getIconFromResources("actions/project-open.png"), this::openProject);
+        openProjectItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, KeyEvent.CTRL_DOWN_MASK));
+        projectMenu.add(openProjectItem);
 
         projectMenu.add(new CustomRecentProjectsMenu("Recent projects", UIUtils.getIconFromResources("actions/clock.png"), this));
 
         projectMenu.addSeparator();
 
-        JMenuItem saveCurrentItem = UIUtils.createMenuItem("Save (current)", "Saves the currently open tab",UIUtils.getIconFromResources("actions/save.png"), this::saveCurrent);
+        JMenuItem saveCurrentItem = UIUtils.createMenuItem("Save ...", "Saves the currently open tab",UIUtils.getIconFromResources("actions/save.png"), this::saveProject);
         saveCurrentItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
         projectMenu.add(saveCurrentItem);
 
-        JMenuItem saveAllItem = UIUtils.createMenuItem("Save (all tabs)", "Saves the all opened tabs",UIUtils.getIconFromResources("actions/save.png"), this::saveAll);
+        JMenuItem saveAllItem = UIUtils.createMenuItem("Save as ...", "Saves the all opened tabs",UIUtils.getIconFromResources("actions/save.png"), this::saveProjectAs);
         saveAllItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK + KeyEvent.ALT_DOWN_MASK));
         projectMenu.add(saveAllItem);
 
@@ -116,35 +166,37 @@ public class SDCaptionWorkbench extends JFrame implements JIPipeWorkbench, Conte
 
         menuBar.add(Box.createHorizontalGlue());
         menuBar.add(new JIPipeRunnerQueueButton(this));
+        menuBar.add(new NotificationButton(this));
     }
 
-    private void saveAll() {
-        for (SDCaptionProject openProject : getOpenProjects()) {
-            openProject.saveAll();
+    private void openDirectory() {
+        Path directory = FileChooserSettings.openDirectory(this, FileChooserSettings.LastDirectoryKey.Projects, "Open image directory");
+        if(directory != null) {
+            window.openProject(directory, false);
         }
-        sendStatusBarText("Saved all currently open projects");
     }
 
-    private void saveCurrent() {
-        if(documentTabPane.getCurrentContent() instanceof SDCaptionProjectUI) {
-            ((SDCaptionProjectUI) documentTabPane.getCurrentContent()).saveAll();
-        }
-        else {
-            sendStatusBarText("Current tab is not a project");
-        }
+    private void saveProjectAs() {
+        project.commitAll();
+        window.saveProjectAs(false);
+    }
+
+    private void saveProject() {
+        project.commitAll();
+        window.saveProjectAs(true);
     }
 
     private void newProject() {
-        openDirectory();
+        openProject();
     }
 
-    private void initializeStatusBar(JPanel panel) {
+    private void initializeStatusBar() {
         JXStatusBar statusBar = new JXStatusBar();
         statusBar.putClientProperty(BasicStatusBarUI.AUTO_ADD_SEPARATOR, false);
         statusBar.add(statusText);
         statusBar.add(Box.createHorizontalGlue(), new JXStatusBar.Constraint(JXStatusBar.Constraint.ResizeBehavior.FILL));
         statusBar.add(new MemoryStatusUI());
-        panel.add(statusBar, BorderLayout.SOUTH);
+        add(statusBar, BorderLayout.SOUTH);
     }
 
     private void openSettings() {
@@ -200,70 +252,19 @@ public class SDCaptionWorkbench extends JFrame implements JIPipeWorkbench, Conte
         dialog.setVisible(true);
     }
 
-    public void openDirectory() {
-        Path directory = FileChooserSettings.openDirectory(this, FileChooserSettings.LastDirectoryKey.Projects, "Open image directory");
-        if(directory != null) {
-            openDirectory(directory);
+    public void openProject() {
+        Path projectFile = FileChooserSettings.openFile(this,
+                FileChooserSettings.LastDirectoryKey.Projects,
+                "Open project file",
+                UIUtils.EXTENSION_FILTER_JSON);
+        if(projectFile != null) {
+            window.openProject(projectFile, false);
         }
-    }
-
-    public List<SDCaptionProject> getOpenProjects() {
-        List<SDCaptionProject> result = new ArrayList<>();
-        for (DocumentTabPane.DocumentTab tab : documentTabPane.getTabs()) {
-            if(tab.getContent() instanceof SDCaptionProjectUI) {
-                result.add(((SDCaptionProjectUI) tab.getContent()).getProject());
-            }
-        }
-        return result;
-    }
-
-    public void openDirectory(Path directory) {
-        // Find already open one
-        for (DocumentTabPane.DocumentTab tab : documentTabPane.getTabs()) {
-            if(tab.getContent() instanceof SDCaptionProjectUI) {
-                if(Objects.equals(directory, ((SDCaptionProjectUI) tab.getContent()).getProject().getStoragePath())) {
-                    documentTabPane.switchToTab(tab);
-                    sendStatusBarText("Switched back to existing tab");
-                    return;
-                }
-            }
-        }
-
-        // Open new tab
-        int option = JOptionPane.showOptionDialog(this,
-                "Are the images only in the selected directory or can they be in sub-directories?",
-                "Open project",
-                JOptionPane.YES_NO_CANCEL_OPTION,
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                new Object[]{"Yes (include subdirectories)", "No (only selected directory)", "Cancel"},
-                "Yes (include subdirectories)");
-
-        if(option == JOptionPane.CANCEL_OPTION) {
-            return;
-        }
-
-        SDCaptionProject project = new SDCaptionProject(directory, option == JOptionPane.YES_NO_OPTION ? Integer.MAX_VALUE : 2);
-        documentTabPane.addTab(directory.getFileName().toString(), UIUtils.getIconFromResources("actions/virtual-desktops.png"),
-                new SDCaptionProjectUI(this, project), DocumentTabPane.CloseMode.withAskOnCloseButton, true);
-        ProjectsSettings.getInstance().addRecentProject(directory);
-        sendStatusBarText("Opened " + directory);
-
-        documentTabPane.switchToLastTab();
-    }
-
-    @Override
-    public void dispose() {
-
-        // Known issue with Scijava
-        JIPipe.exitLater(0);
-
-        super.dispose();
     }
 
     @Override
     public Window getWindow() {
-        return this;
+        return window;
     }
 
     @Override
@@ -300,5 +301,9 @@ public class SDCaptionWorkbench extends JFrame implements JIPipeWorkbench, Conte
     @Override
     public JIPipeNotificationInbox getNotificationInbox() {
         return JIPipeNotificationInbox.getInstance();
+    }
+
+    public void unload() {
+
     }
 }

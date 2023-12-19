@@ -11,12 +11,12 @@
  * See the LICENSE file provided with the code for the full license.
  */
 
-package de.mrnotsoevil.sdcaptionstudio.ui;
+package de.mrnotsoevil.sdcaptionstudio.ui.components;
 
+import de.mrnotsoevil.sdcaptionstudio.ui.SDCaptionProjectWindow;
+import de.mrnotsoevil.sdcaptionstudio.ui.SDCaptionProjectWorkbench;
 import org.hkijena.jipipe.api.parameters.JIPipeParameterCollection;
 import org.hkijena.jipipe.extensions.settings.ProjectsSettings;
-import org.hkijena.jipipe.ui.JIPipeProjectWindow;
-import org.hkijena.jipipe.ui.documentation.RecentProjectsListPanel;
 import org.hkijena.jipipe.utils.UIUtils;
 
 import javax.swing.*;
@@ -27,17 +27,17 @@ import java.nio.file.Path;
  */
 public class CustomRecentProjectsMenu extends JMenu implements JIPipeParameterCollection.ParameterChangedEventListener {
 
-    private final SDCaptionWorkbench workbenchWindow;
+    private final SDCaptionProjectWorkbench workbench;
 
     /**
      * @param text            item text
      * @param icon            item icon
-     * @param workbenchWindow the workbench
+     * @param workbench the workbench
      */
-    public CustomRecentProjectsMenu(String text, Icon icon, SDCaptionWorkbench workbenchWindow) {
+    public CustomRecentProjectsMenu(String text, Icon icon, SDCaptionProjectWorkbench workbench) {
         super(text);
         this.setIcon(icon);
-        this.workbenchWindow = workbenchWindow;
+        this.workbench = workbench;
         reload();
         ProjectsSettings.getInstance().getParameterChangedEventEmitter().subscribeWeak(this);
     }
@@ -61,9 +61,9 @@ public class CustomRecentProjectsMenu extends JMenu implements JIPipeParameterCo
     }
 
     private void openProjectSearch() {
-        JDialog dialog = new JDialog(workbenchWindow);
+        JDialog dialog = new JDialog(workbench.getWindow());
         dialog.setTitle("Open project");
-        CustomRecentProjectsListPanel panel = new CustomRecentProjectsListPanel(workbenchWindow);
+        CustomRecentProjectsListPanel panel = new CustomRecentProjectsListPanel((SDCaptionProjectWindow) workbench.getWindow());
         panel.getProjectOpenedEventEmitter().subscribeLambda((emitter, lambda) -> {
             dialog.setVisible(false);
         });
@@ -72,13 +72,13 @@ public class CustomRecentProjectsMenu extends JMenu implements JIPipeParameterCo
         dialog.setIconImage(UIUtils.getJIPipeIcon128());
         dialog.pack();
         dialog.setSize(800, 600);
-        dialog.setLocationRelativeTo(workbenchWindow);
+        dialog.setLocationRelativeTo(workbench);
         dialog.setModal(true);
         dialog.setVisible(true);
     }
 
     private void openProject(Path path) {
-        workbenchWindow.openDirectory(path);
+        ((SDCaptionProjectWindow)workbench.getWindow()).openProject(path, false);
     }
 
     /**

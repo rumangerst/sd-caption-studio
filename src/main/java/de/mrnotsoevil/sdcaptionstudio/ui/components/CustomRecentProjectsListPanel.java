@@ -1,11 +1,11 @@
-package de.mrnotsoevil.sdcaptionstudio.ui;
+package de.mrnotsoevil.sdcaptionstudio.ui.components;
 
+import de.mrnotsoevil.sdcaptionstudio.ui.SDCaptionProjectWindow;
 import org.hkijena.jipipe.api.events.AbstractJIPipeEvent;
 import org.hkijena.jipipe.api.events.JIPipeEventEmitter;
 import org.hkijena.jipipe.api.parameters.JIPipeParameterCollection;
 import org.hkijena.jipipe.extensions.settings.ProjectsSettings;
 import org.hkijena.jipipe.ui.*;
-import org.hkijena.jipipe.ui.components.RecentProjectListCellRenderer;
 import org.hkijena.jipipe.ui.components.search.SearchTextField;
 
 import javax.swing.*;
@@ -14,13 +14,14 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.nio.file.Path;
 
-public class CustomRecentProjectsListPanel extends JIPipeWorkbenchPanel implements JIPipeParameterCollection.ParameterChangedEventListener {
+public class CustomRecentProjectsListPanel extends JPanel implements JIPipeParameterCollection.ParameterChangedEventListener {
     private final ProjectOpenedEventEmitter projectOpenedEventEmitter = new ProjectOpenedEventEmitter();
     private final SearchTextField recentProjectsSearch = new SearchTextField();
     private final JList<Path> recentProjectsList = new JList<>();
+    private final SDCaptionProjectWindow window;
 
-    public CustomRecentProjectsListPanel(JIPipeWorkbench workbench) {
-        super(workbench);
+    public CustomRecentProjectsListPanel(SDCaptionProjectWindow window) {
+        this.window = window;
         initialize();
         ProjectsSettings.getInstance().getParameterChangedEventEmitter().subscribeWeak(this);
         refreshRecentProjects();
@@ -37,14 +38,14 @@ public class CustomRecentProjectsListPanel extends JIPipeWorkbenchPanel implemen
                     Path value = recentProjectsList.getSelectedValue();
                     if (value != null) {
                         projectOpenedEventEmitter.emit(new ProjectOpenedEvent(value));
-                        ((SDCaptionWorkbench) getWorkbench()).openDirectory(value);
+                        window.openProject(value, false);
                     }
                 } else {
                     if (recentProjectsList.getMousePosition().x > recentProjectsList.getWidth() - 50) {
                         Path value = recentProjectsList.getSelectedValue();
                         if (value != null) {
                             projectOpenedEventEmitter.emit(new ProjectOpenedEvent(value));
-                            ((SDCaptionWorkbench) getWorkbench()).openDirectory(value);
+                            window.openProject(value, false);
                         }
                     }
                 }

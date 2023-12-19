@@ -11,13 +11,12 @@
  * See the LICENSE file provided with the code for the full license.
  */
 
-package de.mrnotsoevil.sdcaptionstudio.ui;
+package de.mrnotsoevil.sdcaptionstudio.ui.components;
 
 import de.mrnotsoevil.sdcaptionstudio.SDCaptionStudio;
 import org.hkijena.jipipe.JIPipe;
 import org.hkijena.jipipe.JIPipeJavaExtension;
 import org.hkijena.jipipe.JIPipeService;
-import org.hkijena.jipipe.utils.ResourceUtils;
 import org.hkijena.jipipe.utils.UIUtils;
 import org.scijava.Context;
 import org.scijava.Contextual;
@@ -33,10 +32,10 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
-public class CustomSplashScreen extends JWindow implements LogListener, Contextual, JIPipeService.ExtensionDiscoveredEventListener {
+public class SDCaptionSplashScreen extends JWindow implements LogListener, Contextual, JIPipeService.ExtensionDiscoveredEventListener {
 
     private static final Object instanceLock = new Object();
-    private static volatile CustomSplashScreen instance;
+    private static volatile SDCaptionSplashScreen instance;
     private Context context;
     private JPanel poweredByContainer;
     private JPanel poweredByIconContainer;
@@ -44,7 +43,7 @@ public class CustomSplashScreen extends JWindow implements LogListener, Contextu
     private JLabel statusLabel = new JLabel("Please wait ...",
             UIUtils.getIconFromResources("actions/hourglass-half.png"), JLabel.LEFT);
 
-    public CustomSplashScreen() {
+    public SDCaptionSplashScreen() {
         initialize();
     }
 
@@ -52,10 +51,10 @@ public class CustomSplashScreen extends JWindow implements LogListener, Contextu
         getInstance().showSplash(null);
     }
 
-    public static CustomSplashScreen getInstance() {
+    public static SDCaptionSplashScreen getInstance() {
         synchronized (instanceLock) {
             if (instance == null) {
-                instance = new CustomSplashScreen();
+                instance = new SDCaptionSplashScreen();
             }
         }
         return instance;

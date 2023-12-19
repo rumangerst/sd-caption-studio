@@ -13,8 +13,9 @@
 
 package de.mrnotsoevil.sdcaptionstudio;
 
-import de.mrnotsoevil.sdcaptionstudio.ui.CustomSplashScreen;
-import de.mrnotsoevil.sdcaptionstudio.ui.SDCaptionWorkbench;
+import de.mrnotsoevil.sdcaptionstudio.ui.SDCaptionProjectWindow;
+import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionSplashScreen;
+import de.mrnotsoevil.sdcaptionstudio.ui.SDCaptionProjectWorkbench;
 import net.imagej.ImageJ;
 import org.hkijena.jipipe.JIPipe;
 import org.hkijena.jipipe.JIPipeRegistryIssues;
@@ -59,19 +60,19 @@ public class GUICommand implements Command {
         // Update look & feel
         UIUtils.loadLookAndFeelFromSettings();
         if (!JIPipe.isInstantiated()) {
-            SwingUtilities.invokeLater(() -> CustomSplashScreen.getInstance().showSplash(context));
+            SwingUtilities.invokeLater(() -> SDCaptionSplashScreen.getInstance().showSplash(context));
         }
 
         // Check java dependencies
         if (!checkJavaDependencies()) {
-            SwingUtilities.invokeLater(() -> CustomSplashScreen.getInstance().hideSplash());
+            SwingUtilities.invokeLater(() -> SDCaptionSplashScreen.getInstance().hideSplash());
             if (JOptionPane.showConfirmDialog(null,
                     "JIPipe has detected that you might miss some essential files. Please " +
                             "ensure that you installed following dependencies:\nGuava\nFlexMark\nJackson\nJGraphT\nOpenHTMLToPDF\nMSLinks\nApache Commons\nFontBox\nPDFBox\nAutoLink \n\n" +
                             "Do you want to continue anyway?", "Missing dependencies", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE) == JOptionPane.NO_OPTION) {
                 return;
             }
-            SwingUtilities.invokeLater(() -> CustomSplashScreen.getInstance().showSplash(context));
+            SwingUtilities.invokeLater(() -> SDCaptionSplashScreen.getInstance().showSplash(context));
         }
 
         // Run registration
@@ -80,7 +81,7 @@ public class GUICommand implements Command {
         try {
             if (JIPipe.getInstance() == null) {
                 JIPipe jiPipe = JIPipe.createInstance(context);
-                CustomSplashScreen.getInstance().setJIPipe(JIPipe.getInstance());
+                SDCaptionSplashScreen.getInstance().setJIPipe(JIPipe.getInstance());
                 jiPipe.initialize(extensionSettings, issues);
             }
         } catch (Exception e) {
@@ -95,12 +96,12 @@ public class GUICommand implements Command {
             ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE);
             ToolTipManager.sharedInstance().setInitialDelay(1000);
 
-            CustomSplashScreen.getInstance().hideSplash();
-
-            SDCaptionWorkbench window = new SDCaptionWorkbench(getContext());
-            window.setVisible(true);
-            window.setExtendedState(window.getExtendedState() + Frame.MAXIMIZED_BOTH);
-            window.toFront();
+            SDCaptionSplashScreen.getInstance().hideSplash();
+            SDCaptionProjectWindow window = SDCaptionProjectWindow.newWindow(context, null, true);
+            SwingUtilities.invokeLater(() -> {
+                window.setExtendedState(window.getExtendedState() + Frame.MAXIMIZED_BOTH);
+                window.toFront();
+            });
         });
     }
 
