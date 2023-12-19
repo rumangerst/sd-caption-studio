@@ -1,6 +1,7 @@
 package de.mrnotsoevil.sdcaptionstudio.ui;
 
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionProject;
+import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionedImage;
 import ij.IJ;
 import org.hkijena.jipipe.ui.JIPipeWorkbench;
 import org.hkijena.jipipe.ui.JIPipeWorkbenchPanel;
@@ -17,11 +18,13 @@ public class SDCaptionProjectUI extends JIPipeWorkbenchPanel implements Disposab
     private final JPanel propertiesPanel = new JPanel(new BorderLayout());
     private final JToggleButton autoSaveButton = new JToggleButton("Auto-save", UIUtils.getIconFromResources("actions/view-refresh.png"), true);
     private final SDCaptionProjectFilesUI projectFilesPanel;
+    private final SDCaptionEditorUI captionEditorUI;
 
     public SDCaptionProjectUI(JIPipeWorkbench workbench, SDCaptionProject project) {
         super(workbench);
         this.project = project;
         this.projectFilesPanel = new SDCaptionProjectFilesUI(this);
+        captionEditorUI = new SDCaptionEditorUI(this);
         initialize();
     }
 
@@ -55,6 +58,13 @@ public class SDCaptionProjectUI extends JIPipeWorkbenchPanel implements Disposab
 
         toolBar.add(Box.createHorizontalGlue());
         toolBar.add(UIUtils.createButton("Open directory", UIUtils.getIconFromResources("actions/project-open.png"), this::openProjectDirectory));
+
+        initializeProperties();
+    }
+
+    private void initializeProperties() {
+        propertiesPanel.setLayout(new BorderLayout());
+        propertiesPanel.add(captionEditorUI, BorderLayout.CENTER);
     }
 
     private void resetProject() {
@@ -91,5 +101,11 @@ public class SDCaptionProjectUI extends JIPipeWorkbenchPanel implements Disposab
     @Override
     public void dispose() {
         project.dispose();
+    }
+
+    public void editCaption(SDCaptionedImage value) {
+        if(value != null) {
+            captionEditorUI.editCaption(value);
+        }
     }
 }

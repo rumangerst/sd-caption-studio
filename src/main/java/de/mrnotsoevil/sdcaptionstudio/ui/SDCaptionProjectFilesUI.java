@@ -6,6 +6,8 @@ import org.hkijena.jipipe.ui.components.AdvancedFileChooser;
 import org.hkijena.jipipe.utils.NaturalOrderComparator;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.nio.file.Path;
@@ -28,6 +30,9 @@ public class SDCaptionProjectFilesUI extends JIPipeWorkbenchPanel {
         setLayout(new BorderLayout());
         add(new JScrollPane(imageList), BorderLayout.CENTER);
         imageList.setCellRenderer(new SDCaptionedImageListCellRenderer(projectUI.getProject()));
+        imageList.addListSelectionListener(e -> {
+            projectUI.editCaption(imageList.getSelectedValue());
+        });
     }
 
     public void reload() {

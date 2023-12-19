@@ -23,8 +23,9 @@ public class SDCaptionedImageListCellRenderer extends JPanel implements ListCell
     private JLabel thumbnailLabel;
     private JLabel nameLabel;
     private JLabel captionLabel;
-    private final Map<String, ImageIcon> thumbnails = new HashMap<>();
-    private final StampedLock thumbnailsLock = new StampedLock();
+    private JLabel sizeLabel;
+    private final Map<String, ImageInfo> imageInfos = new HashMap<>();
+    private final StampedLock imageInfosLock = new StampedLock();
 
     public SDCaptionedImageListCellRenderer(SDCaptionProject project) {
         this.project = project;
@@ -44,6 +45,8 @@ public class SDCaptionedImageListCellRenderer extends JPanel implements ListCell
         nameLabel.setFont(new Font(Font.DIALOG, Font.BOLD, 18));
         captionLabel = new JLabel();
         captionLabel.setFont(new Font(Font.DIALOG, Font.ITALIC, 12));
+        sizeLabel = new JLabel();
+        sizeLabel.setFont(new Font(Font.DIALOG, Font.PLAIN, 12));
 
         add(thumbnailLabel, new GridBagConstraints() {
             {
@@ -59,6 +62,15 @@ public class SDCaptionedImageListCellRenderer extends JPanel implements ListCell
                 gridy = 0;
                 fill = HORIZONTAL;
                 weightx = 1;
+                insets = defaultInsets;
+            }
+        });
+        add(sizeLabel, new GridBagConstraints() {
+            {
+                gridx = 2;
+                gridy = 0;
+                fill = NONE;
+                weightx = 0;
                 insets = defaultInsets;
             }
         });
@@ -81,16 +93,20 @@ public class SDCaptionedImageListCellRenderer extends JPanel implements ListCell
             captionLabel.setText(value.getNumTokens() + " / " + (int)Math.max(1, Math.ceil(value.getNumTokens() * 1.0 / 75)) * 75);
 
             // Try loading the thumbnail
-            long stamp = thumbnailsLock.readLock();
+            long stamp = imageInfosLock.readLock();
             try {
-                ImageIcon icon = thumbnails.getOrDefault(value.getName(), null);
-                if(icon != null) {
-                    thumbnailLabel.setIcon(icon);
+                ImageInfo info = imageInfos.getOrDefault(value.getName(), null);
+                if(info != null) {
+                    thumbnailLabel.setIcon(info.thumbnail);
+                    sizeLabel.setText(info.size);
                 }
                 else {
                     // Load from image
-                    stamp = thumbnailsLock.tryConvertToWriteLock(stamp);
-                    thumbnails.put(value.getName(), loadingIcon);
+                    stamp = imageInfosLock.tryConvertToWriteLock(stamp);
+                    info = new ImageInfo();
+                    info.size = "Loading ...";
+                    info.thumbnail = loadingIcon;
+                    imageInfos.put(value.getName(), info);
 
                     // Schedule
                     ThumbnailLoader loader = new ThumbnailLoader(value, list);
@@ -98,7 +114,7 @@ public class SDCaptionedImageListCellRenderer extends JPanel implements ListCell
                 }
             }
             finally {
-                thumbnailsLock.unlock(stamp);
+                imageInfosLock.unlock(stamp);
             }
         }
 
@@ -119,7 +135,28 @@ public class SDCaptionedImageListCellRenderer extends JPanel implements ListCell
         return project;
     }
 
-    public class ThumbnailLoader extends SwingWorker<ImageIcon, Object> {
+    public static class ImageInfo {
+        private ImageIcon thumbnail;
+        private String size;
+
+        public ImageIcon getThumbnail() {
+            return thumbnail;
+        }
+
+        public void setThumbnail(ImageIcon thumbnail) {
+            this.thumbnail = thumbnail;
+        }
+
+        public String getSize() {
+            return size;
+        }
+
+        public void setSize(String size) {
+            this.size = size;
+        }
+    }
+
+    public class ThumbnailLoader extends SwingWorker<ImageInfo, Object> {
 
         private final SDCaptionedImage captionedImage;
         private final JList<? extends SDCaptionedImage> list;
@@ -130,7 +167,7 @@ public class SDCaptionedImageListCellRenderer extends JPanel implements ListCell
         }
 
         @Override
-        protected ImageIcon doInBackground() throws Exception {
+        protected ImageInfo doInBackground() throws Exception {
             if(!Files.isRegularFile(captionedImage.getImagePath())) {
                 throw new FileNotFoundException(captionedImage.getImagePath() + " does not exist!");
             }
@@ -143,21 +180,27 @@ public class SDCaptionedImageListCellRenderer extends JPanel implements ListCell
             ImageProcessor resized = image.getProcessor().resize((int) (factorX * image.getWidth()),
                     (int) (factorY * image.getHeight()),
                     smooth);
-            return new ImageIcon(resized.createImage());
+            ImageInfo imageInfo = new ImageInfo();
+            imageInfo.thumbnail = new ImageIcon(resized.createImage());
+            imageInfo.size = image.getWidth() + "x" + image.getHeight();
+            return imageInfo;
         }
 
         @Override
         protected void done() {
-            long stamp = thumbnailsLock.writeLock();
+            long stamp = imageInfosLock.writeLock();
             try {
-                ImageIcon imageIcon = get();
-                thumbnails.put(captionedImage.getName(), imageIcon);
+                ImageInfo imageInfo = get();
+                imageInfos.put(captionedImage.getName(), imageInfo);
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
-                thumbnails.put(captionedImage.getName(), UIUtils.getIconFromResources("emblems/vcs-conflicting.png"));
+                ImageInfo imageInfo = new ImageInfo();
+                imageInfo.thumbnail = UIUtils.getIconFromResources("emblems/vcs-conflicting.png");
+                imageInfo.size = "<Unable to load>";
+                imageInfos.put(captionedImage.getName(),imageInfo );
             }
             finally {
-                thumbnailsLock.unlock(stamp);
+                imageInfosLock.unlock(stamp);
                 list.repaint();
             }
         }
