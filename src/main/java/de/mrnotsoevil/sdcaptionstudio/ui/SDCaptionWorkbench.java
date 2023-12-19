@@ -196,6 +196,8 @@ public class SDCaptionWorkbench extends JFrame implements JIPipeWorkbench, Conte
         documentTabPane.addTab(directory.getFileName().toString(), UIUtils.getIconFromResources("actions/virtual-desktops.png"),
                 new SDCaptionProjectUI(this, project), DocumentTabPane.CloseMode.withAskOnCloseButton, true);
         ProjectsSettings.getInstance().addRecentProject(directory);
+
+        documentTabPane.switchToLastTab();
     }
 
     @Override

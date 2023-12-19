@@ -13,6 +13,7 @@
 
 package de.mrnotsoevil.sdcaptionstudio.ui;
 
+import de.mrnotsoevil.sdcaptionstudio.SDCaptionStudio;
 import ij.IJ;
 import org.hkijena.jipipe.JIPipe;
 import org.hkijena.jipipe.ui.*;
@@ -56,9 +57,9 @@ public class CustomWelcomePanel extends JIPipeWorkbenchPanel {
         BufferedImage backgroundImage;
         try {
             if (UIUtils.DARK_THEME) {
-                backgroundImage = ImageIO.read(ResourceUtils.getPluginResource("welcome-hero-dark.png"));
+                backgroundImage = ImageIO.read(SDCaptionStudio.RESOURCES.getResourceAsStream("welcome-hero-dark.png"));
             } else {
-                backgroundImage = ImageIO.read(ResourceUtils.getPluginResource("welcome-hero.png"));
+                backgroundImage = ImageIO.read(SDCaptionStudio.RESOURCES.getResourceAsStream("welcome-hero.png"));
             }
         } catch (Throwable e) {
             backgroundImage = null;
@@ -81,13 +82,6 @@ public class CustomWelcomePanel extends JIPipeWorkbenchPanel {
         JPanel actionPanel = new JPanel();
         actionPanel.setLayout(new BoxLayout(actionPanel, BoxLayout.X_AXIS));
         actionPanel.setOpaque(false);
-
-        actionPanel.add(Box.createHorizontalGlue());
-
-        JTextPane textPane = UIUtils.makeBorderlessReadonlyTextPane("<html>... or <a href=\"https://www.jipipe.org/tutorials/\">learn</a> how to use JIPipe (online tutorials)" +
-                "</html>", false);
-        textPane.setMaximumSize(new Dimension(300, 40));
-        actionPanel.add(textPane);
 
         actionPanel.add(Box.createHorizontalGlue());
 
@@ -144,28 +138,10 @@ public class CustomWelcomePanel extends JIPipeWorkbenchPanel {
 
         toolBar.add(Box.createHorizontalStrut(8));
 
-        JButton openWebsiteButton = new JButton("Visit our website", UIUtils.getIconFromResources("actions/web-browser.png"));
-        openWebsiteButton.setAlignmentY(JComponent.BOTTOM_ALIGNMENT);
-        openWebsiteButton.setToolTipText("https://www.jipipe.org/");
-        openWebsiteButton.addActionListener(e -> UIUtils.openWebsite("https://www.jipipe.org/"));
-        openWebsiteButton.setOpaque(false);
-        openWebsiteButton.setBackground(new Color(0, 0, 0, 0));
-        toolBar.add(openWebsiteButton);
-        toolBar.add(Box.createHorizontalStrut(4));
-
-        JButton openCommunityButton = new JButton("Community", UIUtils.getIconFromResources("actions/im-irc.png"));
-        openCommunityButton.setAlignmentY(JComponent.BOTTOM_ALIGNMENT);
-        openCommunityButton.setToolTipText("https://forum.image.sc/tag/jipipe");
-        openCommunityButton.addActionListener(e -> UIUtils.openWebsite("https://forum.image.sc/tag/jipipe"));
-        openCommunityButton.setOpaque(false);
-        openCommunityButton.setBackground(new Color(0, 0, 0, 0));
-        toolBar.add(openCommunityButton);
-        toolBar.add(Box.createHorizontalStrut(4));
-
         JButton openSourceCodeButton = new JButton("Source code", UIUtils.getIconFromResources("actions/dialog-xml-editor.png"));
         openSourceCodeButton.setAlignmentY(JComponent.BOTTOM_ALIGNMENT);
-        openSourceCodeButton.setToolTipText("https://github.com/applied-systems-biology/jipipe/");
-        openSourceCodeButton.addActionListener(e -> UIUtils.openWebsite("https://github.com/applied-systems-biology/jipipe/"));
+        openSourceCodeButton.setToolTipText("https://github.com/rumangerst/sd-caption-studio");
+        openSourceCodeButton.addActionListener(e -> UIUtils.openWebsite("https://github.com/rumangerst/sd-caption-studio"));
         openSourceCodeButton.setOpaque(false);
         openSourceCodeButton.setBackground(new Color(0, 0, 0, 0));
         toolBar.add(openSourceCodeButton);
@@ -173,8 +149,8 @@ public class CustomWelcomePanel extends JIPipeWorkbenchPanel {
 
         JButton reportIssueButton = new JButton("Report issue", UIUtils.getIconFromResources("actions/bug.png"));
         reportIssueButton.setAlignmentY(JComponent.BOTTOM_ALIGNMENT);
-        reportIssueButton.setToolTipText("https://github.com/applied-systems-biology/jipipe/issues");
-        reportIssueButton.addActionListener(e -> UIUtils.openWebsite("https://github.com/applied-systems-biology/jipipe/issues"));
+        reportIssueButton.setToolTipText("https://github.com/rumangerst/sd-caption-studio/issues");
+        reportIssueButton.addActionListener(e -> UIUtils.openWebsite("https://github.com/rumangerst/sd-caption-studio/issues"));
         reportIssueButton.setOpaque(false);
         reportIssueButton.setBackground(new Color(0, 0, 0, 0));
         toolBar.add(reportIssueButton);
@@ -204,10 +180,10 @@ public class CustomWelcomePanel extends JIPipeWorkbenchPanel {
     }
 
     private void initializeHeroLogo(JPanel heroPanel) {
-        ImageFrame logoPanel = new ImageFrame(UIUtils.getLogo(), false, SizeFitMode.Fit, true);
-        logoPanel.setScaleFactor(0.7);
-        logoPanel.setOpaque(false);
-        heroPanel.add(logoPanel);
+//        ImageFrame logoPanel = new ImageFrame(UIUtils.getLogo(), false, SizeFitMode.Fit, true);
+//        logoPanel.setScaleFactor(0.7);
+//        logoPanel.setOpaque(false);
+//        heroPanel.add(logoPanel);
     }
 
     private void initializeRecentProjects(AutoResizeSplitPane splitPane) {
