@@ -7,10 +7,14 @@ import org.hkijena.jipipe.api.notifications.JIPipeNotificationInbox;
 import org.hkijena.jipipe.extensions.settings.FileChooserSettings;
 import org.hkijena.jipipe.extensions.settings.ProjectsSettings;
 import org.hkijena.jipipe.ui.JIPipeWorkbench;
+import org.hkijena.jipipe.ui.components.MemoryStatusUI;
 import org.hkijena.jipipe.ui.components.tabs.DocumentTabPane;
+import org.hkijena.jipipe.ui.data.MemoryOptionsControl;
+import org.hkijena.jipipe.ui.running.JIPipeRunnerQueueButton;
 import org.hkijena.jipipe.ui.settings.JIPipeApplicationSettingsUI;
 import org.hkijena.jipipe.utils.UIUtils;
 import org.jdesktop.swingx.JXStatusBar;
+import org.jdesktop.swingx.plaf.basic.BasicStatusBarUI;
 import org.scijava.Context;
 import org.scijava.Contextual;
 
@@ -85,6 +89,16 @@ public class SDCaptionWorkbench extends JFrame implements JIPipeWorkbench, Conte
 
         projectMenu.addSeparator();
 
+        JMenuItem saveCurrentItem = UIUtils.createMenuItem("Save (current)", "Saves the currently open tab",UIUtils.getIconFromResources("actions/save.png"), this::saveCurrent);
+        saveCurrentItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
+        projectMenu.add(saveCurrentItem);
+
+        JMenuItem saveAllItem = UIUtils.createMenuItem("Save (all tabs)", "Saves the all opened tabs",UIUtils.getIconFromResources("actions/save.png"), this::saveAll);
+        saveAllItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK + KeyEvent.ALT_DOWN_MASK));
+        projectMenu.add(saveAllItem);
+
+        projectMenu.addSeparator();
+
         JMenuItem settingsItem = new JMenuItem("Application settings", UIUtils.getIconFromResources("actions/configure.png"));
         settingsItem.setToolTipText("Opens the application settings");
         settingsItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, KeyEvent.CTRL_DOWN_MASK + KeyEvent.ALT_DOWN_MASK));
@@ -98,6 +112,26 @@ public class SDCaptionWorkbench extends JFrame implements JIPipeWorkbench, Conte
         projectMenu.add(exitButton);
 
         menuBar.add(projectMenu);
+
+
+        menuBar.add(Box.createHorizontalGlue());
+        menuBar.add(new JIPipeRunnerQueueButton(this));
+    }
+
+    private void saveAll() {
+        for (SDCaptionProject openProject : getOpenProjects()) {
+            openProject.saveAll();
+        }
+        sendStatusBarText("Saved all currently open projects");
+    }
+
+    private void saveCurrent() {
+        if(documentTabPane.getCurrentContent() instanceof SDCaptionProjectUI) {
+            ((SDCaptionProjectUI) documentTabPane.getCurrentContent()).saveAll();
+        }
+        else {
+            sendStatusBarText("Current tab is not a project");
+        }
     }
 
     private void newProject() {
@@ -106,7 +140,10 @@ public class SDCaptionWorkbench extends JFrame implements JIPipeWorkbench, Conte
 
     private void initializeStatusBar(JPanel panel) {
         JXStatusBar statusBar = new JXStatusBar();
+        statusBar.putClientProperty(BasicStatusBarUI.AUTO_ADD_SEPARATOR, false);
         statusBar.add(statusText);
+        statusBar.add(Box.createHorizontalGlue(), new JXStatusBar.Constraint(JXStatusBar.Constraint.ResizeBehavior.FILL));
+        statusBar.add(new MemoryStatusUI());
         panel.add(statusBar, BorderLayout.SOUTH);
     }
 
@@ -186,16 +223,31 @@ public class SDCaptionWorkbench extends JFrame implements JIPipeWorkbench, Conte
             if(tab.getContent() instanceof SDCaptionProjectUI) {
                 if(Objects.equals(directory, ((SDCaptionProjectUI) tab.getContent()).getProject().getStoragePath())) {
                     documentTabPane.switchToTab(tab);
+                    sendStatusBarText("Switched back to existing tab");
                     return;
                 }
             }
         }
 
         // Open new tab
-        SDCaptionProject project = new SDCaptionProject(directory);
+        int option = JOptionPane.showOptionDialog(this,
+                "Are the images only in the selected directory or can they be in sub-directories?",
+                "Open project",
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                new Object[]{"Yes (include subdirectories)", "No (only selected directory)", "Cancel"},
+                "Yes (include subdirectories)");
+
+        if(option == JOptionPane.CANCEL_OPTION) {
+            return;
+        }
+
+        SDCaptionProject project = new SDCaptionProject(directory, option == JOptionPane.YES_NO_OPTION ? Integer.MAX_VALUE : 2);
         documentTabPane.addTab(directory.getFileName().toString(), UIUtils.getIconFromResources("actions/virtual-desktops.png"),
                 new SDCaptionProjectUI(this, project), DocumentTabPane.CloseMode.withAskOnCloseButton, true);
         ProjectsSettings.getInstance().addRecentProject(directory);
+        sendStatusBarText("Opened " + directory);
 
         documentTabPane.switchToLastTab();
     }

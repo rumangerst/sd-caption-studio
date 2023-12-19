@@ -81,7 +81,12 @@ public class CustomRecentProjectListCellRenderer extends JPanel implements ListC
         }
 
         if (isSelected) {
-            setBackground(UIManager.getColor("List.selectionBackground"));
+            if(UIUtils.DARK_THEME) {
+                setBackground(new Color(0x2A537A));
+            }
+            else {
+                setBackground(UIManager.getColor("List.selectionBackground"));
+            }
         } else {
             setBackground(UIManager.getColor("List.background"));
         }
