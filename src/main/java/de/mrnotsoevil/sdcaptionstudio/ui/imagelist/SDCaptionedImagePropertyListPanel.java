@@ -3,29 +3,28 @@ package de.mrnotsoevil.sdcaptionstudio.ui.imagelist;
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionedImage;
 import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionProjectReloadedEvent;
 import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionProjectReloadedEventListener;
-import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionedImageInfoUpdatedEvent;
-import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionedImageInfoUpdatedEventListener;
+import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionedImagePropertyUpdatedEvent;
+import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionedImagePropertyUpdatedEventListener;
 import de.mrnotsoevil.sdcaptionstudio.ui.SDCaptionProjectWorkbench;
 import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionProjectWorkbenchPanel;
 import org.hkijena.jipipe.ui.components.search.SearchTextField;
 import org.hkijena.jipipe.utils.NaturalOrderComparator;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class SDCaptionedImageListPanel extends SDCaptionProjectWorkbenchPanel implements SDCaptionedImageInfoUpdatedEventListener, SDCaptionProjectReloadedEventListener {
+public class SDCaptionedImagePropertyListPanel extends SDCaptionProjectWorkbenchPanel implements SDCaptionedImagePropertyUpdatedEventListener, SDCaptionProjectReloadedEventListener {
     private final JList<SDCaptionedImage> imageList = new JList<>();
     private final SearchTextField searchTextField = new SearchTextField();
 
-    public SDCaptionedImageListPanel(SDCaptionProjectWorkbench workbench) {
+    public SDCaptionedImagePropertyListPanel(SDCaptionProjectWorkbench workbench) {
         super(workbench);
         initialize();
-        workbench.getProject().getCaptionedImageInfoUpdatedEventEmitter().subscribe(this);
+        workbench.getProject().getCaptionedImagePropertyUpdatedEventEmitter().subscribe(this);
         workbench.getProject().getProjectReloadedEventEmitter().subscribe(this);
         reload();
     }
@@ -60,7 +59,7 @@ public class SDCaptionedImageListPanel extends SDCaptionProjectWorkbenchPanel im
     }
 
     @Override
-    public void onCaptionedImageInfoUpdated(SDCaptionedImageInfoUpdatedEvent event) {
+    public void onCaptionedImageInfoUpdated(SDCaptionedImagePropertyUpdatedEvent event) {
         if(imageList.isDisplayable()) {
             imageList.repaint();
         }

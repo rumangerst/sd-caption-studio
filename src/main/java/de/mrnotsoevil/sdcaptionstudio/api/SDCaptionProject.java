@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.databind.JsonNode;
 import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionProjectReloadedEvent;
 import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionProjectReloadedEventEmitter;
-import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionedImageInfoUpdatedEventEmitter;
+import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionedImagePropertyUpdatedEventEmitter;
 import ij.IJ;
 import org.hkijena.jipipe.utils.UIUtils;
 import org.hkijena.jipipe.utils.json.JsonUtils;
@@ -22,12 +22,14 @@ import java.util.stream.Stream;
 
 public class SDCaptionProject implements Disposable {
 
-    private final SDCaptionedImageInfoUpdatedEventEmitter captionedImageInfoUpdatedEventEmitter = new SDCaptionedImageInfoUpdatedEventEmitter();
+    private final SDCaptionedImagePropertyUpdatedEventEmitter captionedImageInfoUpdatedEventEmitter = new SDCaptionedImagePropertyUpdatedEventEmitter();
     private final SDCaptionProjectReloadedEventEmitter projectReloadedEventEmitter = new SDCaptionProjectReloadedEventEmitter();
     private Path storagePath;
     private Path workDirectory;
     private Path projectFilePath;
     private final Map<String, SDCaptionedImage> images = new HashMap<>();
+
+    private boolean saveCaptionsOnProjectSave = true;
 
     public SDCaptionProject() {
     }
@@ -55,6 +57,16 @@ public class SDCaptionProject implements Disposable {
     @JsonGetter("storage-path")
     public Path getStoragePath() {
         return storagePath;
+    }
+
+    @JsonGetter("save-captions-on-project-save")
+    public boolean isSaveCaptionsOnProjectSave() {
+        return saveCaptionsOnProjectSave;
+    }
+
+    @JsonSetter("save-captions-on-project-save")
+    public void setSaveCaptionsOnProjectSave(boolean saveCaptionsOnProjectSave) {
+        this.saveCaptionsOnProjectSave = saveCaptionsOnProjectSave;
     }
 
     public Path getAbsoluteStoragePath() {
@@ -119,7 +131,7 @@ public class SDCaptionProject implements Disposable {
                     if(!image.isCaptionEdited()) {
                         if(Files.isRegularFile(image.getCaptionPath())) {
                             try {
-                                image.setCaption(new String(Files.readAllBytes(image.getCaptionPath()), StandardCharsets.UTF_8));
+                                image.setSavedCaption(new String(Files.readAllBytes(image.getCaptionPath()), StandardCharsets.UTF_8));
                             } catch (IOException e) {
                                 IJ.handleException(e);
                             }
@@ -140,9 +152,18 @@ public class SDCaptionProject implements Disposable {
         JsonUtils.getObjectMapper().readerForUpdating(this).readValue(jsonData);
     }
 
-    public void saveProject(Path file) {
+    public void saveProject(Path file) throws IOException {
         relativizeStoragePath();
         JsonUtils.saveToFile(this, file);
+
+        // Commit all changes
+        if(saveCaptionsOnProjectSave) {
+            for (SDCaptionedImage value : images.values()) {
+                if(value.isCaptionEdited()) {
+                    value.saveCaption();
+                }
+            }
+        }
     }
 
     public static SDCaptionProject loadProject(Path file) {
@@ -157,11 +178,15 @@ public class SDCaptionProject implements Disposable {
         return project;
     }
 
-    public SDCaptionedImageInfoUpdatedEventEmitter getCaptionedImageInfoUpdatedEventEmitter() {
+    public SDCaptionedImagePropertyUpdatedEventEmitter getCaptionedImagePropertyUpdatedEventEmitter() {
         return captionedImageInfoUpdatedEventEmitter;
     }
 
     public SDCaptionProjectReloadedEventEmitter getProjectReloadedEventEmitter() {
         return projectReloadedEventEmitter;
+    }
+
+    public String processCaption(String unprocessedCaption) {
+        return unprocessedCaption; // TODO
     }
 }

@@ -89,8 +89,8 @@ public class SDCaptionSyntaxTokenMaker extends AbstractTokenMaker {
             return;
         int end = start + text.length() - 1;
         int tokenType = getWordsToHighlight().get(segment, start, end);
-//        if (NumberUtils.isCreatable(text))
-//            tokenType = Token.LITERAL_NUMBER_FLOAT;
+        if (text.startsWith("@"))
+            tokenType = Token.VARIABLE;
         if (tokenType == -1)
             tokenType = Token.LITERAL_STRING_DOUBLE_QUOTE;
         int shift = 0;

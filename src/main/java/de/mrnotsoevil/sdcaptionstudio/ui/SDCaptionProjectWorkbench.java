@@ -46,6 +46,7 @@ public class SDCaptionProjectWorkbench extends JPanel implements JIPipeWorkbench
     private final JLabel statusText = new JLabel("Ready");
     private final SDCaptionProject project;
     private final JMenuBar menuBar = new JMenuBar();
+    private final JToggleButton saveCaptionsOnProjectSaveToggle = new JToggleButton("Full project save");
 
     public SDCaptionProjectWorkbench(SDCaptionProjectWindow window, Context context, SDCaptionProject project) {
         this.window = window;
@@ -161,8 +162,16 @@ public class SDCaptionProjectWorkbench extends JPanel implements JIPipeWorkbench
 
         menuBar.add(projectMenu);
 
-
         menuBar.add(Box.createHorizontalGlue());
+
+        saveCaptionsOnProjectSaveToggle.setIcon(UIUtils.getIconFromResources("actions/geany-save-all.png"));
+        saveCaptionsOnProjectSaveToggle.setToolTipText("If enabled, save all edited captions when the project is saved");
+        UIUtils.setStandardButtonBorder(saveCaptionsOnProjectSaveToggle);
+        saveCaptionsOnProjectSaveToggle.setSelected(project.isSaveCaptionsOnProjectSave());
+        saveCaptionsOnProjectSaveToggle.addActionListener(e -> {
+            project.setSaveCaptionsOnProjectSave(saveCaptionsOnProjectSaveToggle.isSelected());
+        });
+        menuBar.add(saveCaptionsOnProjectSaveToggle);
         menuBar.add(new JIPipeRunnerQueueButton(this));
         menuBar.add(new NotificationButton(this));
     }

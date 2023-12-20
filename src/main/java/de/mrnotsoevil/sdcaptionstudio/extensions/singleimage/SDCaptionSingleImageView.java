@@ -1,7 +1,7 @@
 package de.mrnotsoevil.sdcaptionstudio.extensions.singleimage;
 
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionedImage;
-import de.mrnotsoevil.sdcaptionstudio.ui.imagelist.SDCaptionedImageListPanel;
+import de.mrnotsoevil.sdcaptionstudio.ui.imagelist.SDCaptionedImagePropertyListPanel;
 import de.mrnotsoevil.sdcaptionstudio.ui.SDCaptionProjectWorkbench;
 import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionProjectWorkbenchPanel;
 import org.hkijena.jipipe.utils.AutoResizeSplitPane;
@@ -9,15 +9,18 @@ import org.scijava.Disposable;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 
 public class SDCaptionSingleImageView extends SDCaptionProjectWorkbenchPanel implements Disposable {
     private final JPanel propertiesPanel = new JPanel(new BorderLayout());
-    private final SDCaptionedImageListPanel imageListPanel;
+    private final SDCaptionedImagePropertyListPanel imageListPanel;
     private final SDCaptionSingleImageCaptionEditor captionEditorUI;
 
     public SDCaptionSingleImageView(SDCaptionProjectWorkbench workbench) {
         super(workbench);
-        this.imageListPanel = new SDCaptionedImageListPanel(workbench);
+        this.imageListPanel = new SDCaptionedImagePropertyListPanel(workbench);
         captionEditorUI = new SDCaptionSingleImageCaptionEditor(this, workbench);
         initialize();
     }
@@ -38,6 +41,26 @@ public class SDCaptionSingleImageView extends SDCaptionProjectWorkbenchPanel imp
         propertiesPanel.add(captionEditorUI, BorderLayout.CENTER);
 
         imageListPanel.addListSelectionListener(this::editCaption);
+
+        // Register keyboard shortcuts
+//        InputMap inputMap = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+//        ActionMap actionMap = getActionMap();
+//
+//        actionMap.put("next-image", new AbstractAction() {
+//            @Override
+//            public void actionPerformed(ActionEvent e) {
+//                goToNextImage();
+//            }
+//        });
+//        actionMap.put("previous-image", new AbstractAction() {
+//            @Override
+//            public void actionPerformed(ActionEvent e) {
+//                goToPreviousImage();
+//            }
+//        });
+//
+//        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, InputEvent.CTRL_DOWN_MASK), "next-image");
+//        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, InputEvent.CTRL_DOWN_MASK), "previous-image");
     }
 
 

@@ -1,10 +1,15 @@
 package de.mrnotsoevil.sdcaptionstudio.api;
 
-import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionedImageInfoUpdatedEvent;
+import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionedImagePropertyUpdatedEvent;
 import org.hkijena.jipipe.utils.StringUtils;
 import org.hkijena.jipipe.utils.UIUtils;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Objects;
 
 public class SDCaptionedImage {
 
@@ -12,9 +17,9 @@ public class SDCaptionedImage {
     private String name;
     private Path imagePath;
     private Path captionPath;
-    private String caption = "";
+    private String savedCaption = "";
+    private String editedCaption = null;
     private int numTokens;
-    private boolean captionEdited;
     private SDCaptionedImageInfo currentImageInfo;
 
     private SDCaptionedImageInfoLoader imageInfoLoader;
@@ -26,7 +31,8 @@ public class SDCaptionedImage {
     public void setCurrentImageInfo(SDCaptionedImageInfo currentImageInfo) {
         this.currentImageInfo = currentImageInfo;
         if(project != null) {
-            project.getCaptionedImageInfoUpdatedEventEmitter().emit(new SDCaptionedImageInfoUpdatedEvent(this));
+            project.getCaptionedImagePropertyUpdatedEventEmitter().emit(
+                    new SDCaptionedImagePropertyUpdatedEvent(this, SDCaptionedImageProperty.ImageInfo));
         }
     }
 
@@ -64,25 +70,72 @@ public class SDCaptionedImage {
         this.imagePath = imagePath;
     }
 
-    public String getCaption() {
-        return caption;
+    public String getSavedCaption() {
+        return savedCaption;
     }
 
-    public void setCaption(String caption) {
-        this.caption = StringUtils.nullToEmpty(caption);
-        this.numTokens = this.caption.split("\\s+").length;
+    public void setSavedCaption(String savedCaption) {
+        this.savedCaption = StringUtils.nullToEmpty(savedCaption);
+        this.editedCaption = null;
+        updateCaptionTokens();
+
+        if(project != null) {
+            project.getCaptionedImagePropertyUpdatedEventEmitter().emit(
+                    new SDCaptionedImagePropertyUpdatedEvent(this, SDCaptionedImageProperty.Caption));
+        }
+    }
+
+    private void updateCaptionTokens() {
+        if(!StringUtils.isNullOrEmpty(getFinalCaption())) {
+            this.numTokens = getFinalCaption().split("\\s+").length;
+        }
+        else {
+            this.numTokens = 0;
+        }
+    }
+
+    public String getEditedCaption() {
+        return editedCaption;
+    }
+
+    public void setEditedCaption(String editedCaption) {
+        this.editedCaption = editedCaption;
+        updateCaptionTokens();
+
+        if(project != null) {
+            project.getCaptionedImagePropertyUpdatedEventEmitter().emit(
+                    new SDCaptionedImagePropertyUpdatedEvent(this, SDCaptionedImageProperty.Caption));
+        }
+    }
+
+    public void resetCaption() {
+        setEditedCaption(null);
+    }
+
+    public String getFinalCaption() {
+       if(project != null) {
+           return project.processCaption(getUnprocessedCaption());
+       }
+       else {
+           return getUnprocessedCaption();
+       }
+    }
+
+    public String getUnprocessedCaption() {
+        if(editedCaption != null) {
+            return StringUtils.nullToEmpty(editedCaption);
+        }
+        else {
+            return StringUtils.nullToEmpty(savedCaption);
+        }
+    }
+
+    public boolean isCaptionEdited() {
+        return editedCaption != null && !Objects.equals(savedCaption, editedCaption);
     }
 
     public int getNumTokens() {
         return numTokens;
-    }
-
-    public boolean isCaptionEdited() {
-        return captionEdited;
-    }
-
-    public void setCaptionEdited(boolean captionEdited) {
-        this.captionEdited = captionEdited;
     }
 
     public Path getCaptionPath() {
@@ -99,5 +152,13 @@ public class SDCaptionedImage {
 
     public void setProject(SDCaptionProject project) {
         this.project = project;
+    }
+
+    public void saveCaption() throws IOException {
+        if(isCaptionEdited()) {
+           savedCaption = getEditedCaption();
+           setEditedCaption(null);
+        }
+        Files.write(getCaptionPath(), getFinalCaption().getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
     }
 }

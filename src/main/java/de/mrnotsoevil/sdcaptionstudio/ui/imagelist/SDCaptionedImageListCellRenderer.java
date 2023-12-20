@@ -83,12 +83,20 @@ public class SDCaptionedImageListCellRenderer extends JPanel implements ListCell
 
         if(value != null) {
             nameLabel.setText(value.getName());
-            captionLabel.setText(value.getNumTokens() + " / " + (int)Math.max(1, Math.ceil(value.getNumTokens() * 1.0 / 75)) * 75);
 
             SDCaptionedImageInfo info = value.getImageInfoForUI();
             if(info != null) {
                 thumbnailLabel.setIcon(info.getThumbnail());
                 sizeLabel.setText(info.getSize());
+            }
+
+            if(value.isCaptionEdited()) {
+                captionLabel.setIcon(UIUtils.getIconFromResources("emblems/emblem-important-blue.png"));
+                captionLabel.setText(value.getNumTokens() + " / " + (int)Math.max(1, Math.ceil(value.getNumTokens() * 1.0 / 75)) * 75 + " (unsaved)");
+            }
+            else {
+                captionLabel.setIcon(UIUtils.getIconFromResources("emblems/checkmark.png"));
+                captionLabel.setText(value.getNumTokens() + " / " + (int)Math.max(1, Math.ceil(value.getNumTokens() * 1.0 / 75)) * 75);
             }
         }
 
