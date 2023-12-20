@@ -25,7 +25,7 @@ import java.nio.file.Path;
 /**
  * Menu that displays recently opened {@link org.hkijena.jipipe.api.JIPipeProject}
  */
-public class CustomRecentProjectsMenu extends JMenu implements JIPipeParameterCollection.ParameterChangedEventListener {
+public class SDCaptionRecentProjectsMenu extends JMenu implements JIPipeParameterCollection.ParameterChangedEventListener {
 
     private final SDCaptionProjectWorkbench workbench;
 
@@ -34,7 +34,7 @@ public class CustomRecentProjectsMenu extends JMenu implements JIPipeParameterCo
      * @param icon            item icon
      * @param workbench the workbench
      */
-    public CustomRecentProjectsMenu(String text, Icon icon, SDCaptionProjectWorkbench workbench) {
+    public SDCaptionRecentProjectsMenu(String text, Icon icon, SDCaptionProjectWorkbench workbench) {
         super(text);
         this.setIcon(icon);
         this.workbench = workbench;
@@ -63,7 +63,7 @@ public class CustomRecentProjectsMenu extends JMenu implements JIPipeParameterCo
     private void openProjectSearch() {
         JDialog dialog = new JDialog(workbench.getWindow());
         dialog.setTitle("Open project");
-        CustomRecentProjectsListPanel panel = new CustomRecentProjectsListPanel((SDCaptionProjectWindow) workbench.getWindow());
+        SDCaptionRecentProjectsListPanel panel = new SDCaptionRecentProjectsListPanel((SDCaptionProjectWindow) workbench.getWindow());
         panel.getProjectOpenedEventEmitter().subscribeLambda((emitter, lambda) -> {
             dialog.setVisible(false);
         });

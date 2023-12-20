@@ -9,14 +9,14 @@ import java.nio.file.Path;
 /**
  * Renders a recent project
  */
-public class CustomRecentProjectListCellRenderer extends JPanel implements ListCellRenderer<Path> {
+public class SDCaptionRecentProjectListCellRenderer extends JPanel implements ListCellRenderer<Path> {
 
     private JLabel iconLabel;
     private JLabel nameLabel;
     private JLabel pathLabel;
     private JButton openButton;
 
-    public CustomRecentProjectListCellRenderer() {
+    public SDCaptionRecentProjectListCellRenderer() {
         setOpaque(true);
         initialize();
         setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));

@@ -2,12 +2,10 @@ package de.mrnotsoevil.sdcaptionstudio.ui;
 
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionEditorPlugin;
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionProject;
-import de.mrnotsoevil.sdcaptionstudio.ui.components.CustomRecentProjectsMenu;
+import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionRecentProjectsMenu;
 import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionProjectWorkbenchPanel;
-import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionWelcomePanel;
 import ij.IJ;
 import org.hkijena.jipipe.JIPipe;
-import org.hkijena.jipipe.JIPipeJavaExtension;
 import org.hkijena.jipipe.api.notifications.JIPipeNotification;
 import org.hkijena.jipipe.api.notifications.JIPipeNotificationInbox;
 import org.hkijena.jipipe.extensions.settings.FileChooserSettings;
@@ -135,7 +133,7 @@ public class SDCaptionProjectWorkbench extends JPanel implements JIPipeWorkbench
         openProjectItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, KeyEvent.CTRL_DOWN_MASK));
         projectMenu.add(openProjectItem);
 
-        projectMenu.add(new CustomRecentProjectsMenu("Recent projects", UIUtils.getIconFromResources("actions/clock.png"), this));
+        projectMenu.add(new SDCaptionRecentProjectsMenu("Recent projects", UIUtils.getIconFromResources("actions/clock.png"), this));
 
         projectMenu.addSeparator();
 

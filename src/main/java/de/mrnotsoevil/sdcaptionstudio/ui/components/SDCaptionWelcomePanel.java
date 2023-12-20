@@ -224,7 +224,7 @@ public class SDCaptionWelcomePanel extends JPanel {
     private void initRecentProjects(DocumentTabPane tabPane) {
         tabPane.addTab("Recent projects",
                 UIUtils.getIconFromResources("actions/view-calendar-time-spent.png"),
-                new CustomRecentProjectsListPanel(window),
+                new SDCaptionRecentProjectsListPanel(window),
                 DocumentTabPane.CloseMode.withoutCloseButton);
     }
 }

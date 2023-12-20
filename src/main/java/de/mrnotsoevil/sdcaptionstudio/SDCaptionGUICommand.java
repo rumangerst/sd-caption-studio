@@ -15,7 +15,6 @@ package de.mrnotsoevil.sdcaptionstudio;
 
 import de.mrnotsoevil.sdcaptionstudio.ui.SDCaptionProjectWindow;
 import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionSplashScreen;
-import de.mrnotsoevil.sdcaptionstudio.ui.SDCaptionProjectWorkbench;
 import net.imagej.ImageJ;
 import org.hkijena.jipipe.JIPipe;
 import org.hkijena.jipipe.JIPipeRegistryIssues;
@@ -38,7 +37,7 @@ import java.util.List;
  * Command that runs the GUI
  */
 @Plugin(type = Command.class, menuPath = "Plugins>SD Caption Studio")
-public class GUICommand implements Command {
+public class SDCaptionGUICommand implements Command {
 
     @Parameter
     private PluginService pluginService;
@@ -52,7 +51,7 @@ public class GUICommand implements Command {
     public static void main(final String... args) {
         final ImageJ ij = new ImageJ();
 //        ij.ui().showUI();
-        SwingUtilities.invokeLater(() -> ij.command().run(GUICommand.class, true));
+        SwingUtilities.invokeLater(() -> ij.command().run(SDCaptionGUICommand.class, true));
     }
 
     @Override
