@@ -70,4 +70,33 @@ public class SDCaptionedImageListPanel extends SDCaptionProjectWorkbenchPanel im
     public void onProjectReloaded(SDCaptionProjectReloadedEvent event) {
         reload();
     }
+
+    public void goToPreviousImage() {
+        if(imageList.getModel().getSize() > 0) {
+            int selectedIndex = imageList.getSelectedIndex();
+            if (selectedIndex == -1) {
+                imageList.setSelectedIndex(0);
+            }
+            else if(selectedIndex == 0) {
+                imageList.setSelectedIndex(imageList.getModel().getSize() - 1);
+            }
+            else {
+                imageList.setSelectedIndex(selectedIndex - 1);
+            }
+            imageList.ensureIndexIsVisible(imageList.getSelectedIndex());
+        }
+    }
+
+    public void goToNextImage() {
+        if(imageList.getModel().getSize() > 0) {
+            int selectedIndex = imageList.getSelectedIndex();
+            if (selectedIndex == -1) {
+                imageList.setSelectedIndex(0);
+            }
+            else {
+                imageList.setSelectedIndex((selectedIndex + 1) % imageList.getModel().getSize());
+            }
+            imageList.ensureIndexIsVisible(imageList.getSelectedIndex());
+        }
+    }
 }

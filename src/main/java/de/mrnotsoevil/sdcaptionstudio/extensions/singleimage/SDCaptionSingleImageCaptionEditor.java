@@ -26,12 +26,14 @@ import java.util.Collections;
 import java.util.Set;
 
 public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbenchPanel {
+    private final SDCaptionSingleImageView view;
     private SDCaptionedImage currentlyEditedImage;
     private final JIPipeImageViewer imageViewer;
     private final RSyntaxTextArea captionEditor;
 
-    public SDCaptionSingleImageCaptionEditor(SDCaptionProjectWorkbench workbench) {
+    public SDCaptionSingleImageCaptionEditor(SDCaptionSingleImageView view, SDCaptionProjectWorkbench workbench) {
         super(workbench);
+        this.view = view;
         this.imageViewer = new JIPipeImageViewer(workbench,
                 Arrays.asList(CalibrationPlugin2D.class,
                         PixelInfoPlugin2D.class),
@@ -73,6 +75,26 @@ public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbench
         captionEditor.setBackground(UIManager.getColor("TextArea.background"));
         captionEditor.setHighlightCurrentLine(true);
         promptEditorPanel.add(new RTextScrollPane(captionEditor), BorderLayout.CENTER);
+
+        JToolBar topToolbar = new JToolBar();
+        topToolbar.setFloatable(false);
+        promptEditorPanel.add(topToolbar,BorderLayout.NORTH);
+
+        JToolBar bottomToolbar = new JToolBar();
+        bottomToolbar.setFloatable(false);
+        promptEditorPanel.add(bottomToolbar, BorderLayout.SOUTH);
+        initializeBottomToolbar(bottomToolbar);
+    }
+
+    private void initializeBottomToolbar(JToolBar bottomToolbar) {
+        JButton previousButton = UIUtils.createButton("Previous", UIUtils.getIconFromResources("actions/previous.png"), view::goToPreviousImage);
+        bottomToolbar.add(previousButton);
+
+        bottomToolbar.add(Box.createHorizontalGlue());
+
+        JButton nextButton = UIUtils.createButton("Next", UIUtils.getIconFromResources("actions/next.png"), view::goToNextImage);
+        nextButton.setHorizontalTextPosition(SwingConstants.LEFT);
+        bottomToolbar.add(nextButton);
     }
 
     public void editCaption(SDCaptionedImage captionedImage) {

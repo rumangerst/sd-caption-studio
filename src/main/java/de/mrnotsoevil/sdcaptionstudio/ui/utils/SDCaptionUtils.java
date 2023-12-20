@@ -1,13 +1,19 @@
 package de.mrnotsoevil.sdcaptionstudio.ui.utils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.Theme;
+import org.hkijena.jipipe.api.registries.JIPipeSettingsRegistry;
+import org.hkijena.jipipe.ui.theme.JIPipeUITheme;
 import org.hkijena.jipipe.utils.JIPipeResourceManager;
 import org.hkijena.jipipe.utils.ResourceUtils;
 import org.hkijena.jipipe.utils.UIUtils;
+import org.hkijena.jipipe.utils.json.JsonUtils;
 
 import javax.swing.*;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class SDCaptionUtils {
     public static JIPipeResourceManager RESOURCES = new JIPipeResourceManager(SDCaptionUtils.class, "/de/mrnotsoevil/sdcaptionstudio");
@@ -34,7 +40,6 @@ public class SDCaptionUtils {
         }
         return APPLICATION_ICON;
     }
-
     public static void applyThemeToCodeEditor(RSyntaxTextArea textArea) {
         if (UIUtils.DARK_THEME) {
             try {

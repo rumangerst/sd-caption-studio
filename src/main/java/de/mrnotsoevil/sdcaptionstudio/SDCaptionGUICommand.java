@@ -21,6 +21,8 @@ import org.hkijena.jipipe.JIPipeRegistryIssues;
 import org.hkijena.jipipe.extensions.settings.ExtensionSettings;
 import org.hkijena.jipipe.ui.JIPipeDummyWorkbench;
 import org.hkijena.jipipe.ui.ijupdater.MissingRegistrationUpdateSiteResolver;
+import org.hkijena.jipipe.utils.CoreImageJUtils;
+import org.hkijena.jipipe.utils.PathUtils;
 import org.hkijena.jipipe.utils.UIUtils;
 import org.scijava.Context;
 import org.scijava.command.Command;
@@ -30,6 +32,7 @@ import org.scijava.plugin.PluginService;
 
 import javax.swing.*;
 import java.awt.*;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 

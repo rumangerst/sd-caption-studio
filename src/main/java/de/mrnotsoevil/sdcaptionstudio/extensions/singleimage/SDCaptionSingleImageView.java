@@ -18,7 +18,7 @@ public class SDCaptionSingleImageView extends SDCaptionProjectWorkbenchPanel imp
     public SDCaptionSingleImageView(SDCaptionProjectWorkbench workbench) {
         super(workbench);
         this.imageListPanel = new SDCaptionedImageListPanel(workbench);
-        captionEditorUI = new SDCaptionSingleImageCaptionEditor(workbench);
+        captionEditorUI = new SDCaptionSingleImageCaptionEditor(this, workbench);
         initialize();
     }
 
@@ -45,5 +45,13 @@ public class SDCaptionSingleImageView extends SDCaptionProjectWorkbenchPanel imp
         if(value != null) {
             captionEditorUI.editCaption(value);
         }
+    }
+
+    public void goToPreviousImage() {
+        imageListPanel.goToPreviousImage();
+    }
+
+    public void goToNextImage() {
+        imageListPanel.goToNextImage();
     }
 }

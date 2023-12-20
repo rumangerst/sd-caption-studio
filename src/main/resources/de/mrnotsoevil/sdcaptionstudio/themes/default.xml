@@ -49,7 +49,7 @@
       <style token="LITERAL_NUMBER_DECIMAL_INT" fg="6400C8"/>
       <style token="LITERAL_NUMBER_FLOAT" fg="6400C8"/>
       <style token="LITERAL_NUMBER_HEXADECIMAL" fg="6400C8"/>
-      <style token="LITERAL_STRING_DOUBLE_QUOTE" fg="DC009C"/>
+      <style token="LITERAL_STRING_DOUBLE_QUOTE" fg="444444"/>
       <style token="LITERAL_CHAR" fg="DC009C"/>
       <style token="LITERAL_BACKQUOTE" fg="DC009C"/>
       <style token="MARKUP_TAG_DELIMITER" fg="ff0000"/>
@@ -62,7 +62,7 @@
       <style token="MARKUP_CDATA" fg="cc6600"/>
       <style token="MARKUP_CDATA_DELIMITER" fg="008080"/>
       <style token="MARKUP_ENTITY_REFERENCE" fg="008000"/>
-      <style token="OPERATOR" fg="804040"/>
+      <style token="OPERATOR" fg="AB6E0C"/>
       <style token="PREPROCESSOR" fg="808080"/>
       <style token="REGEX" fg="008040"/>
       <style token="SEPARATOR" fg="ff0000"/>
