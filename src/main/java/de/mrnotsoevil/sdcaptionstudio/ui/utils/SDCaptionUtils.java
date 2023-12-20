@@ -16,6 +16,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class SDCaptionUtils {
+
+    public static final char[] TEMPLATE_SEPARATOR_CHARS = { ',', ';', '.', '@', ' ', '\n', '\t', '\r'};
     public static JIPipeResourceManager RESOURCES = new JIPipeResourceManager(SDCaptionUtils.class, "/de/mrnotsoevil/sdcaptionstudio");
     private static SDCaptionUtils INSTANCE;
     private static ImageIcon APPLICATION_ICON;
@@ -62,5 +64,13 @@ public class SDCaptionUtils {
                 ioe.printStackTrace();
             }
         }
+    }
+
+    public static String toValidTemplateKey(String name) {
+        name = name.replaceAll("\\w+", "_");
+        for (char c : TEMPLATE_SEPARATOR_CHARS) {
+            name = name.replace(c, '_');
+        }
+        return name.trim();
     }
 }

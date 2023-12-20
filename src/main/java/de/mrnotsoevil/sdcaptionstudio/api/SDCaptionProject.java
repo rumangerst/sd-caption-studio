@@ -3,10 +3,13 @@ package de.mrnotsoevil.sdcaptionstudio.api;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.Lists;
 import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionProjectReloadedEvent;
 import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionProjectReloadedEventEmitter;
 import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionedImagePropertyUpdatedEventEmitter;
+import de.mrnotsoevil.sdcaptionstudio.ui.utils.SDCaptionUtils;
 import ij.IJ;
+import org.hkijena.jipipe.utils.StringUtils;
 import org.hkijena.jipipe.utils.UIUtils;
 import org.hkijena.jipipe.utils.json.JsonUtils;
 import org.scijava.Disposable;
@@ -18,6 +21,7 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class SDCaptionProject implements Disposable {
@@ -28,6 +32,7 @@ public class SDCaptionProject implements Disposable {
     private Path workDirectory;
     private Path projectFilePath;
     private final Map<String, SDCaptionedImage> images = new HashMap<>();
+    private Map<String, SDCaptionTemplate> templates = new HashMap<>();
 
     private boolean saveCaptionsOnProjectSave = true;
 
@@ -69,6 +74,16 @@ public class SDCaptionProject implements Disposable {
         this.saveCaptionsOnProjectSave = saveCaptionsOnProjectSave;
     }
 
+    @JsonGetter("templates")
+    public Map<String, SDCaptionTemplate> getTemplates() {
+        return templates;
+    }
+
+    @JsonSetter("templates")
+    public void setTemplates(Map<String, SDCaptionTemplate> templates) {
+        this.templates = templates;
+    }
+
     public Path getAbsoluteStoragePath() {
         if(storagePath.isAbsolute()) {
             return storagePath;
@@ -93,13 +108,10 @@ public class SDCaptionProject implements Disposable {
         return Collections.unmodifiableMap(images);
     }
 
-    public void commitAll() {
-
-    }
-
     public void reset() {
         images.clear();
         reload();
+        // TODO: handle reload
     }
 
     public void reload() {
@@ -186,7 +198,37 @@ public class SDCaptionProject implements Disposable {
         return projectReloadedEventEmitter;
     }
 
-    public String processCaption(String unprocessedCaption) {
-        return unprocessedCaption; // TODO
+    public String captionContractTemplates(String caption) {
+        List<Map.Entry<String, SDCaptionTemplate>> orderedEntries = templates.entrySet().stream().sorted(Comparator.comparing((Map.Entry<String, SDCaptionTemplate> entry) ->
+                entry.getValue().getContent().length())).collect(Collectors.toList());
+        orderedEntries = Lists.reverse(orderedEntries);
+
+        // Contract from the largest to the smallest with spacing
+        caption = " " + caption + " "; // Safety-spacing
+
+        for (Map.Entry<String, SDCaptionTemplate> entry : orderedEntries) {
+            for(char c : SDCaptionUtils.TEMPLATE_SEPARATOR_CHARS) {
+                caption = caption.replace(c + entry.getValue().getContent() + c, "@" + SDCaptionUtils.toValidTemplateKey(entry.getKey()) + c);
+            }
+        }
+
+        return caption;
     }
+
+    public String captionExpandTemplates(String caption) {
+        if(!caption.endsWith(" ")) {
+            caption = caption + " ";
+        }
+        for (Map.Entry<String, SDCaptionTemplate> entry : templates.entrySet()) {
+            String variable = SDCaptionUtils.toValidTemplateKey(entry.getKey());
+            if(StringUtils.isNullOrEmpty(variable)) {
+                continue;
+            }
+            for(char c : SDCaptionUtils.TEMPLATE_SEPARATOR_CHARS) {
+                caption = caption.replace("@" + variable + c, entry.getValue().getContent() + c);
+            }
+        }
+        return caption.trim();
+    }
+
 }

@@ -195,7 +195,7 @@ public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbench
             currentlyEditedImage.setEditedCaption(captionEditor.getText());
 
             // Update preview
-            captionPreview.setText(getProject().processCaption(captionEditor.getText()));
+            captionPreview.setText(getProject().captionExpandTemplates(captionEditor.getText()));
         }
     }
 
@@ -226,7 +226,7 @@ public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbench
         loading = true;
         try (BusyCursor cursor = new BusyCursor(SwingUtilities.getWindowAncestor(this))) {
             if (currentlyEditedImage != null) {
-                this.captionEditor.setText(currentlyEditedImage.getUnprocessedCaption());
+                this.captionEditor.setText(currentlyEditedImage.getShortenedCaption());
                 this.captionPreview.setText(currentlyEditedImage.getFinalCaption());
                 ImagePlus image = IJ.openImage(currentlyEditedImage.getImagePath().toString());
                 imageViewer.setImagePlus(image);

@@ -114,19 +114,28 @@ public class SDCaptionedImage {
 
     public String getFinalCaption() {
        if(project != null) {
-           return project.processCaption(getUnprocessedCaption());
+           return project.captionExpandTemplates(getRawCaption());
        }
        else {
-           return getUnprocessedCaption();
+           return getRawCaption();
        }
     }
 
-    public String getUnprocessedCaption() {
+    public String getRawCaption() {
         if(editedCaption != null) {
             return StringUtils.nullToEmpty(editedCaption);
         }
         else {
             return StringUtils.nullToEmpty(savedCaption);
+        }
+    }
+
+    public String getShortenedCaption() {
+        if(project != null) {
+            return project.captionContractTemplates(getRawCaption());
+        }
+        else {
+            return getRawCaption();
         }
     }
 

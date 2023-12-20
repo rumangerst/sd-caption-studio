@@ -184,12 +184,10 @@ public class SDCaptionProjectWorkbench extends JPanel implements JIPipeWorkbench
     }
 
     private void saveProjectAs() {
-        project.commitAll();
         window.saveProjectAs(false);
     }
 
     private void saveProject() {
-        project.commitAll();
         window.saveProjectAs(true);
     }
 
