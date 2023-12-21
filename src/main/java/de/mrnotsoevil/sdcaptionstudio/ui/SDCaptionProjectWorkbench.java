@@ -54,7 +54,7 @@ public class SDCaptionProjectWorkbench extends JPanel implements JIPipeWorkbench
         this.project = project;
 
         // Fully resets the project and loads all images
-        project.reset();
+        project.reload();
 
         // Initialize
         initialize();

@@ -3,6 +3,7 @@ package de.mrnotsoevil.sdcaptionstudio.ui.templatemanager;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.ImmutableList;
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionTemplate;
+import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionedImage;
 import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionProjectTemplatesChangedEvent;
 import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionProjectTemplatesChangedEventListener;
 import de.mrnotsoevil.sdcaptionstudio.ui.SDCaptionProjectWorkbench;
@@ -322,6 +323,7 @@ public class SDCaptionTemplateManagerPanel extends SDCaptionProjectWorkbenchPane
                 }
 
                 String newKey = StringUtils.nullToEmpty(copy.getKey()).trim();
+                boolean contentChanged = !Objects.equals(copy.getContent(), template.getContent());
 
                 if (StringUtils.isNullOrEmpty(newKey)) {
                     JOptionPane.showMessageDialog(this,
@@ -351,6 +353,14 @@ public class SDCaptionTemplateManagerPanel extends SDCaptionProjectWorkbenchPane
                 }
 
                 getProject().addTemplate(copy, true);
+
+                if(contentChanged) {
+                    for (SDCaptionedImage image : getProject().getImages().values()) {
+                        if(image.getUserCaption().contains("@" + copy.getKey())) {
+                            image.setUserCaptionEdited(true);
+                        }
+                    }
+                }
                 break;
             }
         }
