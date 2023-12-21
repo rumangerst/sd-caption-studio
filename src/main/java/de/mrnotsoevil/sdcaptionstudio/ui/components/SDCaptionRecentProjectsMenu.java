@@ -30,8 +30,8 @@ public class SDCaptionRecentProjectsMenu extends JMenu implements JIPipeParamete
     private final SDCaptionProjectWorkbench workbench;
 
     /**
-     * @param text            item text
-     * @param icon            item icon
+     * @param text      item text
+     * @param icon      item icon
      * @param workbench the workbench
      */
     public SDCaptionRecentProjectsMenu(String text, Icon icon, SDCaptionProjectWorkbench workbench) {
@@ -78,7 +78,7 @@ public class SDCaptionRecentProjectsMenu extends JMenu implements JIPipeParamete
     }
 
     private void openProject(Path path) {
-        ((SDCaptionProjectWindow)workbench.getWindow()).openProject(path, false);
+        ((SDCaptionProjectWindow) workbench.getWindow()).openProject(path, false);
     }
 
     /**

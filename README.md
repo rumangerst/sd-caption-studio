@@ -1,6 +1,6 @@
 # SD Caption Studio
 
-Yet another tool to make manual captioning easier. Currently works with data sets that contain images and a caption 
+Yet another tool to make manual captioning easier. Currently works with data sets that contain images and a caption
 txt file in the same directory.
 
 ## Building

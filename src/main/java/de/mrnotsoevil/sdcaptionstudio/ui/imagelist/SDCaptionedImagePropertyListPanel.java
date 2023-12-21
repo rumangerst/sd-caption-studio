@@ -51,7 +51,7 @@ public class SDCaptionedImagePropertyListPanel extends SDCaptionProjectWorkbench
         List<SDCaptionedImage> images = new ArrayList<>(getProject().getImages().values());
         images.sort(Comparator.comparing(SDCaptionedImage::getName, NaturalOrderComparator.INSTANCE));
         for (SDCaptionedImage image : images) {
-            if(searchTextField.test(image.getName())) {
+            if (searchTextField.test(image.getName())) {
                 model.addElement(image);
             }
         }
@@ -60,7 +60,7 @@ public class SDCaptionedImagePropertyListPanel extends SDCaptionProjectWorkbench
 
     @Override
     public void onCaptionedImageInfoUpdated(SDCaptionedImagePropertyUpdatedEvent event) {
-        if(imageList.isDisplayable()) {
+        if (imageList.isDisplayable()) {
             imageList.repaint();
         }
     }
@@ -71,15 +71,13 @@ public class SDCaptionedImagePropertyListPanel extends SDCaptionProjectWorkbench
     }
 
     public void goToPreviousImage() {
-        if(imageList.getModel().getSize() > 0) {
+        if (imageList.getModel().getSize() > 0) {
             int selectedIndex = imageList.getSelectedIndex();
             if (selectedIndex == -1) {
                 imageList.setSelectedIndex(0);
-            }
-            else if(selectedIndex == 0) {
+            } else if (selectedIndex == 0) {
                 imageList.setSelectedIndex(imageList.getModel().getSize() - 1);
-            }
-            else {
+            } else {
                 imageList.setSelectedIndex(selectedIndex - 1);
             }
             imageList.ensureIndexIsVisible(imageList.getSelectedIndex());
@@ -87,12 +85,11 @@ public class SDCaptionedImagePropertyListPanel extends SDCaptionProjectWorkbench
     }
 
     public void goToNextImage() {
-        if(imageList.getModel().getSize() > 0) {
+        if (imageList.getModel().getSize() > 0) {
             int selectedIndex = imageList.getSelectedIndex();
             if (selectedIndex == -1) {
                 imageList.setSelectedIndex(0);
-            }
-            else {
+            } else {
                 imageList.setSelectedIndex((selectedIndex + 1) % imageList.getModel().getSize());
             }
             imageList.ensureIndexIsVisible(imageList.getSelectedIndex());

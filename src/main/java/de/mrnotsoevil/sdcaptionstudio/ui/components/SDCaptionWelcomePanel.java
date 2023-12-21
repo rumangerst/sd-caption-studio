@@ -13,8 +13,8 @@
 
 package de.mrnotsoevil.sdcaptionstudio.ui.components;
 
-import de.mrnotsoevil.sdcaptionstudio.ui.utils.SDCaptionUtils;
 import de.mrnotsoevil.sdcaptionstudio.ui.SDCaptionProjectWindow;
+import de.mrnotsoevil.sdcaptionstudio.ui.utils.SDCaptionUtils;
 import ij.IJ;
 import org.hkijena.jipipe.extensions.settings.FileChooserSettings;
 import org.hkijena.jipipe.ui.components.FormPanel;
@@ -40,7 +40,6 @@ public class SDCaptionWelcomePanel extends JPanel {
 
     /**
      * Creates a new instance
-     *
      */
     public SDCaptionWelcomePanel(SDCaptionProjectWindow window) {
         this.window = window;
@@ -132,14 +131,14 @@ public class SDCaptionWelcomePanel extends JPanel {
                 FileChooserSettings.LastDirectoryKey.Projects,
                 "Open project file",
                 UIUtils.EXTENSION_FILTER_JSON);
-        if(projectFile != null) {
+        if (projectFile != null) {
             window.openProject(projectFile, false);
         }
     }
 
     private void doActionOpenDirectory() {
         Path directory = FileChooserSettings.openDirectory(this, FileChooserSettings.LastDirectoryKey.Projects, "Open image directory");
-        if(directory != null) {
+        if (directory != null) {
             window.openProject(directory, false);
         }
     }

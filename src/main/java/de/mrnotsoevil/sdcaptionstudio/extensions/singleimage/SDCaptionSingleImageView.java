@@ -1,17 +1,14 @@
 package de.mrnotsoevil.sdcaptionstudio.extensions.singleimage;
 
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionedImage;
-import de.mrnotsoevil.sdcaptionstudio.ui.imagelist.SDCaptionedImagePropertyListPanel;
 import de.mrnotsoevil.sdcaptionstudio.ui.SDCaptionProjectWorkbench;
 import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionProjectWorkbenchPanel;
+import de.mrnotsoevil.sdcaptionstudio.ui.imagelist.SDCaptionedImagePropertyListPanel;
 import org.hkijena.jipipe.utils.AutoResizeSplitPane;
 import org.scijava.Disposable;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 
 public class SDCaptionSingleImageView extends SDCaptionProjectWorkbenchPanel implements Disposable {
     private final JPanel propertiesPanel = new JPanel(new BorderLayout());
@@ -65,7 +62,7 @@ public class SDCaptionSingleImageView extends SDCaptionProjectWorkbenchPanel imp
 
 
     public void editCaption(SDCaptionedImage value) {
-        if(value != null) {
+        if (value != null) {
             captionEditorUI.editCaption(value);
         }
     }

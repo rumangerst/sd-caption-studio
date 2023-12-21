@@ -81,10 +81,9 @@ public class SDCaptionRecentProjectListCellRenderer extends JPanel implements Li
         }
 
         if (isSelected) {
-            if(UIUtils.DARK_THEME) {
+            if (UIUtils.DARK_THEME) {
                 setBackground(new Color(0x2A537A));
-            }
-            else {
+            } else {
                 setBackground(UIManager.getColor("List.selectionBackground"));
             }
         } else {

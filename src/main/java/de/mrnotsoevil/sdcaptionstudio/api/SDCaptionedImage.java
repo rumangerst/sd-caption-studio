@@ -30,19 +30,18 @@ public class SDCaptionedImage {
 
     public void setCurrentImageInfo(SDCaptionedImageInfo currentImageInfo) {
         this.currentImageInfo = currentImageInfo;
-        if(project != null) {
+        if (project != null) {
             project.getCaptionedImagePropertyUpdatedEventEmitter().emit(
                     new SDCaptionedImagePropertyUpdatedEvent(this, SDCaptionedImageProperty.ImageInfo));
         }
     }
 
     public SDCaptionedImageInfo getImageInfoForUI() {
-        if(currentImageInfo != null) {
+        if (currentImageInfo != null) {
             return currentImageInfo;
-        }
-        else {
+        } else {
             synchronized (this) {
-                if(imageInfoLoader == null) {
+                if (imageInfoLoader == null) {
                     imageInfoLoader = new SDCaptionedImageInfoLoader(this, 64);
                     imageInfoLoader.execute();
                 }
@@ -79,17 +78,16 @@ public class SDCaptionedImage {
         this.editedCaption = null;
         updateCaptionTokens();
 
-        if(project != null) {
+        if (project != null) {
             project.getCaptionedImagePropertyUpdatedEventEmitter().emit(
                     new SDCaptionedImagePropertyUpdatedEvent(this, SDCaptionedImageProperty.Caption));
         }
     }
 
     private void updateCaptionTokens() {
-        if(!StringUtils.isNullOrEmpty(getFinalCaption())) {
+        if (!StringUtils.isNullOrEmpty(getFinalCaption())) {
             this.numTokens = getFinalCaption().split("\\s+").length;
-        }
-        else {
+        } else {
             this.numTokens = 0;
         }
     }
@@ -102,7 +100,7 @@ public class SDCaptionedImage {
         this.editedCaption = editedCaption;
         updateCaptionTokens();
 
-        if(project != null) {
+        if (project != null) {
             project.getCaptionedImagePropertyUpdatedEventEmitter().emit(
                     new SDCaptionedImagePropertyUpdatedEvent(this, SDCaptionedImageProperty.Caption));
         }
@@ -113,28 +111,25 @@ public class SDCaptionedImage {
     }
 
     public String getFinalCaption() {
-       if(project != null) {
-           return project.captionExpandTemplates(getRawCaption());
-       }
-       else {
-           return getRawCaption();
-       }
+        if (project != null) {
+            return project.captionExpandTemplates(getRawCaption());
+        } else {
+            return getRawCaption();
+        }
     }
 
     public String getRawCaption() {
-        if(editedCaption != null) {
+        if (editedCaption != null) {
             return StringUtils.nullToEmpty(editedCaption);
-        }
-        else {
+        } else {
             return StringUtils.nullToEmpty(savedCaption);
         }
     }
 
     public String getShortenedCaption() {
-        if(project != null) {
+        if (project != null) {
             return project.captionContractTemplates(getRawCaption());
-        }
-        else {
+        } else {
             return getRawCaption();
         }
     }
@@ -164,10 +159,10 @@ public class SDCaptionedImage {
     }
 
     public void saveCaption() throws IOException {
-        if(isCaptionEdited()) {
-           savedCaption = getEditedCaption();
-           setEditedCaption(null);
+        if (isCaptionEdited()) {
+            savedCaption = getEditedCaption();
+            setEditedCaption(null);
         }
-        Files.write(getCaptionPath(), getFinalCaption().getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
+        Files.write(getCaptionPath(), getFinalCaption().getBytes(StandardCharsets.UTF_8));
     }
 }

@@ -14,10 +14,10 @@
 package de.mrnotsoevil.sdcaptionstudio.ui;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import de.mrnotsoevil.sdcaptionstudio.ui.utils.SDCaptionUtils;
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionProject;
-import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionWelcomePanel;
 import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionSplashScreen;
+import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionWelcomePanel;
+import de.mrnotsoevil.sdcaptionstudio.ui.utils.SDCaptionUtils;
 import org.hkijena.jipipe.api.notifications.JIPipeNotificationInbox;
 import org.hkijena.jipipe.api.validation.JIPipeValidationReport;
 import org.hkijena.jipipe.api.validation.JIPipeValidationRuntimeException;
@@ -38,7 +38,10 @@ import java.awt.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Window that holds an {@link SDCaptionProjectWorkbench} instance
@@ -54,8 +57,8 @@ public class SDCaptionProjectWindow extends JFrame {
     private UUID sessionId = UUID.randomUUID();
 
     /**
-     * @param context          context
-     * @param project          The project
+     * @param context context
+     * @param project The project
      */
     public SDCaptionProjectWindow(Context context, SDCaptionProject project) {
         SDCaptionSplashScreen.getInstance().hideSplash();
@@ -63,16 +66,11 @@ public class SDCaptionProjectWindow extends JFrame {
         OPEN_WINDOWS.add(this);
         WINDOW_OPENED_EVENT_EMITTER.emit(new WindowOpenedEvent(this));
         initialize();
-        if(project != null) {
+        if (project != null) {
             loadProject(project);
-        }
-        else {
+        } else {
             loadWelcomePanel();
         }
-    }
-
-    private void loadWelcomePanel() {
-        setContentPane(new SDCaptionWelcomePanel(this));
     }
 
     /**
@@ -92,9 +90,9 @@ public class SDCaptionProjectWindow extends JFrame {
     /**
      * Creates a new window
      *
-     * @param context          context
-     * @param project          The project
-     * @param isNewProject     if the project is a new empty project
+     * @param context      context
+     * @param project      The project
+     * @param isNewProject if the project is a new empty project
      * @return The window
      */
     public static SDCaptionProjectWindow newWindow(Context context, SDCaptionProject project, boolean isNewProject) {
@@ -110,6 +108,10 @@ public class SDCaptionProjectWindow extends JFrame {
      */
     public static Set<SDCaptionProjectWindow> getOpenWindows() {
         return Collections.unmodifiableSet(OPEN_WINDOWS);
+    }
+
+    private void loadWelcomePanel() {
+        setContentPane(new SDCaptionWelcomePanel(this));
     }
 
     private void initialize() {
@@ -144,7 +146,7 @@ public class SDCaptionProjectWindow extends JFrame {
     /**
      * Loads a project into the window
      *
-     * @param project          The project
+     * @param project The project
      */
     public void loadProject(SDCaptionProject project) {
         this.project = project;
@@ -174,12 +176,12 @@ public class SDCaptionProjectWindow extends JFrame {
      * Opens a project from a file or folder
      * Asks the user if it should replace the currently displayed project
      *
-     * @param projectFileOrDirectory               JSON project file or result folder
-     * @param forceCurrentWindow force open in current window
+     * @param projectFileOrDirectory JSON project file or result folder
+     * @param forceCurrentWindow     force open in current window
      */
     public void openProject(Path projectFileOrDirectory, boolean forceCurrentWindow) {
 
-        if(projectUI == null) {
+        if (projectUI == null) {
             // Handle the special case of a new window
             forceCurrentWindow = true;
         }
@@ -188,7 +190,7 @@ public class SDCaptionProjectWindow extends JFrame {
         if (Files.isDirectory(projectFileOrDirectory)) {
             // Autoload from directory
             Path projectFile = projectFileOrDirectory.resolve("sd-caption-studio.project.json");
-            if(Files.isRegularFile(projectFile)) {
+            if (Files.isRegularFile(projectFile)) {
                 projectFileOrDirectory = projectFile;
             }
         }
@@ -199,8 +201,7 @@ public class SDCaptionProjectWindow extends JFrame {
             project.setWorkDirectory(projectFileOrDirectory);
             project.setStoragePath(projectFileOrDirectory);
 
-        }
-        else if (Files.isRegularFile(projectFileOrDirectory)) {
+        } else if (Files.isRegularFile(projectFileOrDirectory)) {
             // Load a project file
             JIPipeValidationReport report = new JIPipeValidationReport();
 
@@ -216,12 +217,12 @@ public class SDCaptionProjectWindow extends JFrame {
             if (!report.isValid()) {
                 UIUtils.openValidityReportDialog(new JIPipeDummyWorkbench(), this, report, "Errors while loading the project",
                         "It seems that some data could be be loaded/restored. " +
-                        "Please review the entries and apply the necessary changes.", false);
+                                "Please review the entries and apply the necessary changes.", false);
             }
         }
 
         // Load project into window
-        if(project != null) {
+        if (project != null) {
             SDCaptionProjectWindow window;
             if (forceCurrentWindow) {
                 window = this;
@@ -244,8 +245,7 @@ public class SDCaptionProjectWindow extends JFrame {
                         true);
             }
             FileChooserSettings.getInstance().setLastDirectoryBy(FileChooserSettings.LastDirectoryKey.Projects, projectFileOrDirectory.getParent());
-        }
-        else {
+        } else {
             JOptionPane.showMessageDialog(this, "Unable to load or create a project!", "Open project", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -281,7 +281,7 @@ public class SDCaptionProjectWindow extends JFrame {
                 return;
         }
 
-        if(Files.isDirectory(savePath)) {
+        if (Files.isDirectory(savePath)) {
             savePath = savePath.resolve("sd-caption-studio.project.json");
         }
 
@@ -317,9 +317,9 @@ public class SDCaptionProjectWindow extends JFrame {
     }
 
     /**
-     * @param messageTitle     Description of the project source
-     * @param project          The project
-     * @param isNewProject     if the project is an empty project
+     * @param messageTitle Description of the project source
+     * @param project      The project
+     * @param isNewProject if the project is an empty project
      * @return The window that holds the project
      */
     private SDCaptionProjectWindow openProjectInThisOrNewWindow(String messageTitle, SDCaptionProject project, boolean isNewProject) {

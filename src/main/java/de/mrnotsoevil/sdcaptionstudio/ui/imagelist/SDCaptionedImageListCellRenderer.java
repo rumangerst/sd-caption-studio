@@ -3,14 +3,10 @@ package de.mrnotsoevil.sdcaptionstudio.ui.imagelist;
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionProject;
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionedImage;
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionedImageInfo;
-import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionedImageInfoLoader;
 import org.hkijena.jipipe.utils.UIUtils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.locks.StampedLock;
 
 public class SDCaptionedImageListCellRenderer extends JPanel implements ListCellRenderer<SDCaptionedImage> {
     private final SDCaptionProject project;
@@ -27,7 +23,7 @@ public class SDCaptionedImageListCellRenderer extends JPanel implements ListCell
 
     private void initialize() {
         setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        Insets defaultInsets = new Insets(4,4,4,4);
+        Insets defaultInsets = new Insets(4, 4, 4, 4);
         setLayout(new GridBagLayout());
         thumbnailLabel = new JLabel(UIUtils.getIcon16FromResources("actions/hourglass-half.png"), JLabel.CENTER);
         thumbnailLabel.setPreferredSize(new Dimension(thumbnailSize, thumbnailSize));
@@ -81,30 +77,28 @@ public class SDCaptionedImageListCellRenderer extends JPanel implements ListCell
     @Override
     public Component getListCellRendererComponent(JList<? extends SDCaptionedImage> list, SDCaptionedImage value, int index, boolean isSelected, boolean cellHasFocus) {
 
-        if(value != null) {
+        if (value != null) {
             nameLabel.setText(value.getName());
 
             SDCaptionedImageInfo info = value.getImageInfoForUI();
-            if(info != null) {
+            if (info != null) {
                 thumbnailLabel.setIcon(info.getThumbnail());
                 sizeLabel.setText(info.getSize());
             }
 
-            if(value.isCaptionEdited()) {
+            if (value.isCaptionEdited()) {
                 captionLabel.setIcon(UIUtils.getIconFromResources("emblems/emblem-important-blue.png"));
-                captionLabel.setText(value.getNumTokens() + " / " + (int)Math.max(1, Math.ceil(value.getNumTokens() * 1.0 / 75)) * 75 + " (unsaved)");
-            }
-            else {
+                captionLabel.setText(value.getNumTokens() + " / " + (int) Math.max(1, Math.ceil(value.getNumTokens() * 1.0 / 75)) * 75 + " (unsaved)");
+            } else {
                 captionLabel.setIcon(UIUtils.getIconFromResources("emblems/checkmark.png"));
-                captionLabel.setText(value.getNumTokens() + " / " + (int)Math.max(1, Math.ceil(value.getNumTokens() * 1.0 / 75)) * 75);
+                captionLabel.setText(value.getNumTokens() + " / " + (int) Math.max(1, Math.ceil(value.getNumTokens() * 1.0 / 75)) * 75);
             }
         }
 
         if (isSelected) {
-            if(UIUtils.DARK_THEME) {
+            if (UIUtils.DARK_THEME) {
                 setBackground(new Color(0x2A537A));
-            }
-            else {
+            } else {
                 setBackground(UIManager.getColor("List.selectionBackground"));
             }
         } else {

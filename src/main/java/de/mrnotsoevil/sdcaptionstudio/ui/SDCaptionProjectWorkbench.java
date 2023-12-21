@@ -2,8 +2,8 @@ package de.mrnotsoevil.sdcaptionstudio.ui;
 
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionEditorPlugin;
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionProject;
-import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionRecentProjectsMenu;
 import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionProjectWorkbenchPanel;
+import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionRecentProjectsMenu;
 import ij.IJ;
 import org.hkijena.jipipe.JIPipe;
 import org.hkijena.jipipe.api.notifications.JIPipeNotification;
@@ -126,11 +126,11 @@ public class SDCaptionProjectWorkbench extends JPanel implements JIPipeWorkbench
     private void initializeMenuBar(JMenuBar menuBar) {
         JMenu projectMenu = new JMenu("Project");
 
-        JMenuItem openDirectoryItem = UIUtils.createMenuItem("Open directory ...", "Opens an existing directory",UIUtils.getIconFromResources("actions/project-open.png"), this::openDirectory);
+        JMenuItem openDirectoryItem = UIUtils.createMenuItem("Open directory ...", "Opens an existing directory", UIUtils.getIconFromResources("actions/project-open.png"), this::openDirectory);
         openDirectoryItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, KeyEvent.CTRL_DOWN_MASK));
         projectMenu.add(openDirectoryItem);
 
-        JMenuItem openProjectItem = UIUtils.createMenuItem("Open project ...", "Opens an existing project",UIUtils.getIconFromResources("actions/project-open.png"), this::openProject);
+        JMenuItem openProjectItem = UIUtils.createMenuItem("Open project ...", "Opens an existing project", UIUtils.getIconFromResources("actions/project-open.png"), this::openProject);
         openProjectItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, KeyEvent.CTRL_DOWN_MASK));
         projectMenu.add(openProjectItem);
 
@@ -138,11 +138,11 @@ public class SDCaptionProjectWorkbench extends JPanel implements JIPipeWorkbench
 
         projectMenu.addSeparator();
 
-        JMenuItem saveCurrentItem = UIUtils.createMenuItem("Save ...", "Saves the currently open tab",UIUtils.getIconFromResources("actions/save.png"), this::saveProject);
+        JMenuItem saveCurrentItem = UIUtils.createMenuItem("Save ...", "Saves the currently open tab", UIUtils.getIconFromResources("actions/save.png"), this::saveProject);
         saveCurrentItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
         projectMenu.add(saveCurrentItem);
 
-        JMenuItem saveAllItem = UIUtils.createMenuItem("Save as ...", "Saves the all opened tabs",UIUtils.getIconFromResources("actions/save.png"), this::saveProjectAs);
+        JMenuItem saveAllItem = UIUtils.createMenuItem("Save as ...", "Saves the all opened tabs", UIUtils.getIconFromResources("actions/save.png"), this::saveProjectAs);
         saveAllItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK + KeyEvent.ALT_DOWN_MASK));
         projectMenu.add(saveAllItem);
 
@@ -178,7 +178,7 @@ public class SDCaptionProjectWorkbench extends JPanel implements JIPipeWorkbench
 
     private void openDirectory() {
         Path directory = FileChooserSettings.openDirectory(this, FileChooserSettings.LastDirectoryKey.Projects, "Open image directory");
-        if(directory != null) {
+        if (directory != null) {
             window.openProject(directory, false);
         }
     }
@@ -212,14 +212,14 @@ public class SDCaptionProjectWorkbench extends JPanel implements JIPipeWorkbench
         dialog.setIconImage(UIUtils.getJIPipeIcon128());
         JIPipeApplicationSettingsUI applicationSettingsUI = new JIPipeApplicationSettingsUI(this);
         UIUtils.addEscapeListener(dialog);
-        JPanel contentPanel = new JPanel(new BorderLayout(8,8));
+        JPanel contentPanel = new JPanel(new BorderLayout(8, 8));
         contentPanel.add(applicationSettingsUI, BorderLayout.CENTER);
 
         AtomicBoolean saved = new AtomicBoolean(false);
         dialog.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent windowEvent) {
-                if(!saved.get()) {
+                if (!saved.get()) {
                     JIPipe.getSettings().reload();
                 }
             }
@@ -248,11 +248,11 @@ public class SDCaptionProjectWorkbench extends JPanel implements JIPipeWorkbench
         });
         buttonPanel.add(saveButton);
         contentPanel.add(buttonPanel, BorderLayout.SOUTH);
-        buttonPanel.setBorder(BorderFactory.createEmptyBorder(8,8,8,8));
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
         dialog.setContentPane(contentPanel);
         dialog.pack();
-        dialog.setSize(1280,768);
+        dialog.setSize(1280, 768);
         dialog.setLocationRelativeTo(getWindow());
         dialog.setVisible(true);
     }
@@ -262,7 +262,7 @@ public class SDCaptionProjectWorkbench extends JPanel implements JIPipeWorkbench
                 FileChooserSettings.LastDirectoryKey.Projects,
                 "Open project file",
                 UIUtils.EXTENSION_FILTER_JSON);
-        if(projectFile != null) {
+        if (projectFile != null) {
             window.openProject(projectFile, false);
         }
     }

@@ -1,12 +1,7 @@
 package de.mrnotsoevil.sdcaptionstudio.ui.utils;
 
-import com.fathzer.soft.javaluator.Constant;
-import com.fathzer.soft.javaluator.Function;
-import com.fathzer.soft.javaluator.Operator;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.fife.ui.rsyntaxtextarea.AbstractTokenMaker;
 import org.fife.ui.rsyntaxtextarea.Token;
-import org.fife.ui.rsyntaxtextarea.TokenMaker;
 import org.fife.ui.rsyntaxtextarea.TokenMap;
 
 import javax.swing.text.Segment;

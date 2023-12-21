@@ -7,15 +7,22 @@ import org.hkijena.jipipe.api.parameters.AbstractJIPipeParameterCollection;
 import org.hkijena.jipipe.api.parameters.JIPipeParameter;
 import org.hkijena.jipipe.extensions.parameters.library.markup.HTMLText;
 import org.hkijena.jipipe.extensions.parameters.library.primitives.StringParameterSettings;
+import org.hkijena.jipipe.utils.StringUtils;
+
+import java.awt.*;
 
 public class SDCaptionTemplate extends AbstractJIPipeParameterCollection {
+
+    private SDCaptionProject project;
     private String name;
-    private HTMLText description;
+    private HTMLText description = new HTMLText();
     private String content;
+    private String key;
+    private Color color = new Color(0x43A8E0);
 
     @JIPipeDocumentation(name = "Name", description = "The name of the template")
     @JsonGetter("name")
-    @JIPipeParameter("name")
+    @JIPipeParameter(value = "name", uiOrder = -80)
     public String getName() {
         return name;
     }
@@ -36,13 +43,18 @@ public class SDCaptionTemplate extends AbstractJIPipeParameterCollection {
     @JsonSetter("description")
     @JIPipeParameter("description")
     public void setDescription(HTMLText description) {
-        this.description = description;
+        if(description != null) {
+            this.description = description;
+        }
+        else {
+            this.description = new HTMLText();
+        }
     }
 
     @JIPipeDocumentation(name = "Content", description = "The content that is inserted for the template")
     @JsonGetter("content")
-    @JIPipeParameter("content")
-    @StringParameterSettings(monospace = true)
+    @JIPipeParameter(value = "content", uiOrder = -90, important = true)
+    @StringParameterSettings(monospace = true, multiline = true)
     public String getContent() {
         return content;
     }
@@ -50,7 +62,51 @@ public class SDCaptionTemplate extends AbstractJIPipeParameterCollection {
     @JsonSetter("content")
     @JIPipeParameter("content")
     public void setContent(String content) {
-        this.content = content;
+        this.content = StringUtils.nullToEmpty(content)
+                .replace("\n", " ")
+                .replace("\t", " ")
+                .replace("\r", " ");
     }
 
+    public SDCaptionProject getProject() {
+        return project;
+    }
+
+    public void setProject(SDCaptionProject project) {
+        this.project = project;
+    }
+
+    @JIPipeDocumentation(name = "Key", description = "The key of this template")
+    @JIPipeParameter(value = "key", uiOrder = -100, important = true)
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    @JIPipeParameter("key")
+    public String getKey() {
+        if(project != null) {
+            return project.findTemplateKey(this);
+        }
+        else {
+            return key;
+        }
+    }
+
+    @JIPipeDocumentation(name = "Color", description = "Color shown in the template list")
+    @JIPipeParameter("color")
+    @JsonGetter("color")
+    public Color getColor() {
+        return color;
+    }
+
+    @JIPipeParameter("color")
+    @JsonSetter("color")
+    public void setColor(Color color) {
+        this.color = color;
+    }
+
+    public void copyMetadataFrom(SDCaptionTemplate other) {
+        setName(other.getName());
+        setDescription(new HTMLText(other.getDescription()));
+    }
 }
