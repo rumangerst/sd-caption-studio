@@ -356,7 +356,7 @@ public class SDCaptionTemplateManagerPanel extends SDCaptionProjectWorkbenchPane
 
                 if(contentChanged) {
                     for (SDCaptionedImage image : getProject().getImages().values()) {
-                        if(image.getUserCaption().contains("@" + copy.getKey())) {
+                        if(image.getUserCaption() != null && image.getUserCaption().contains("@" + copy.getKey())) {
                             image.setUserCaptionEdited(true);
                         }
                     }
