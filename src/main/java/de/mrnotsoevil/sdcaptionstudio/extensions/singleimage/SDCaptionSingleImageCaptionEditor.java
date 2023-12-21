@@ -26,9 +26,7 @@ import org.hkijena.jipipe.ui.components.DocumentChangeListener;
 import org.hkijena.jipipe.ui.components.FlexContentPanel;
 import org.hkijena.jipipe.ui.components.icons.NewThrobberIcon;
 import org.hkijena.jipipe.ui.components.tabs.DocumentTabPane;
-import org.hkijena.jipipe.ui.parameters.ParameterPanel;
 import org.hkijena.jipipe.utils.AutoResizeSplitPane;
-import org.hkijena.jipipe.utils.StringUtils;
 import org.hkijena.jipipe.utils.UIUtils;
 import org.hkijena.jipipe.utils.ui.BusyCursor;
 
@@ -118,7 +116,7 @@ public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbench
         autoSaveToggle.setIcon(autoSaveDefaultIcon);
         if (currentlyEditedImage != null) {
             try {
-                currentlyEditedImage.saveCaption();
+                currentlyEditedImage.saveCaptionToFile();
                 getProjectWorkbench().sendStatusBarText("Saved " + currentlyEditedImage.getCaptionPath());
             } catch (IOException e) {
                 IJ.handleException(e);
@@ -184,8 +182,9 @@ public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbench
         if (caret > 0) {
             try {
                 if (spacing && !Objects.equals(this.captionEditor.getText(caret - 1, 1), " ")) {
-                    text = " " + text;
+                    text = ", " + text;
                 }
+
             } catch (BadLocationException e) {
             }
         }
@@ -205,7 +204,7 @@ public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbench
         if(currentlyEditedImage != null) {
             SDCaptionTemplate template = templateManagerPanel.getTemplateJList().getSelectedValue();
             if(template != null) {
-                if(!currentlyEditedImage.getShortenedCaption().contains("@" + template.getKey())) {
+                if(!currentlyEditedImage.getUserCaption().contains("@" + template.getKey())) {
                     insertCaptionTextAtCaret("@" + template.getKey(), true);
                     getProjectWorkbench().sendStatusBarText("Inserted template @" + template.getKey() + " into " + currentlyEditedImage.getName());
                 }
@@ -219,57 +218,7 @@ public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbench
     private void newTemplateFromSelection() {
         if(currentlyEditedImage != null) {
             String selectedText = captionEditor.getSelectedText();
-            if(selectedText != null) {
-                selectedText = selectedText.trim();
-                if(selectedText.isEmpty()) {
-                    return;
-                }
-
-                SDCaptionTemplate template = new SDCaptionTemplate();
-                template.setContent(selectedText);
-
-                while(true) {
-                    boolean result = ParameterPanel.showDialog(getProjectWorkbench(), template,
-                            SDCaptionUtils.getDocumentation("create-templates.md"),
-                            "Create template",
-                            ParameterPanel.DEFAULT_DIALOG_FLAGS);
-                    if(result) {
-                        String key = StringUtils.nullToEmpty(template.getKey()).trim();
-                        if(StringUtils.isNullOrEmpty(key)) {
-                            JOptionPane.showMessageDialog(this,
-                                    "The key cannot be empty!",
-                                    "Create template",
-                                    JOptionPane.ERROR_MESSAGE);
-                        }
-                        else if(getProject().getTemplates().containsKey(key)) {
-                            JOptionPane.showMessageDialog(this,
-                                    "The key already exists!",
-                                    "Create template",
-                                    JOptionPane.ERROR_MESSAGE);
-                        }
-                        else {
-                            String validKey = SDCaptionUtils.toValidTemplateKey(key);
-                            if(!validKey.equals(key)) {
-                                template.setKey(validKey);
-                                JOptionPane.showMessageDialog(this,
-                                        "The key was not valid and edited to conform to the required format.",
-                                        "Create template",
-                                        JOptionPane.INFORMATION_MESSAGE);
-                            }
-                            else {
-                                // Everything OK
-                                SDCaptionTemplate newTemplate = getProject().createTemplate(template.getKey(), template.getContent());
-                                newTemplate.copyMetadataFrom(template);
-                                getProject().getProjectTemplatesChangedEventEmitter().emit(new SDCaptionProjectTemplatesChangedEvent(getProject()));
-                                break;
-                            }
-                        }
-                    }
-                    else {
-                        break;
-                    }
-                }
-            }
+            templateManagerPanel.createNewTemplate(selectedText);
         }
     }
 
@@ -327,10 +276,11 @@ public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbench
 
     private void updateCaptionFromTextEditor() {
         if (currentlyEditedImage != null) {
-            currentlyEditedImage.setEditedCaption(captionEditor.getText());
+            currentlyEditedImage.setUserCaption(captionEditor.getText());
+            currentlyEditedImage.setUserCaptionEdited(true);
 
             // Update preview
-            captionPreview.setText(getProject().captionExpandTemplates(captionEditor.getText()));
+            captionPreview.setText(currentlyEditedImage.getCompiledUserCaption());
         }
     }
 
@@ -361,8 +311,8 @@ public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbench
         loading = true;
         try (BusyCursor cursor = new BusyCursor(SwingUtilities.getWindowAncestor(this))) {
             if (currentlyEditedImage != null) {
-                this.captionEditor.setText(currentlyEditedImage.getShortenedCaption());
-                this.captionPreview.setText(currentlyEditedImage.getFinalCaption());
+                this.captionEditor.setText(currentlyEditedImage.getUserCaption());
+                this.captionPreview.setText(currentlyEditedImage.getCompiledUserCaption());
                 ImagePlus image = IJ.openImage(currentlyEditedImage.getImagePath().toString());
                 imageViewer.setImagePlus(image);
             }
@@ -375,7 +325,7 @@ public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbench
 
     @Override
     public void onCaptionedImageInfoUpdated(SDCaptionedImagePropertyUpdatedEvent event) {
-        if (event.getImage() == currentlyEditedImage && currentlyEditedImage.isCaptionEdited() && autoSaveToggle.isSelected()) {
+        if (event.getImage() == currentlyEditedImage && currentlyEditedImage.isUserCaptionEdited() && autoSaveToggle.isSelected()) {
             saveCaptionLater();
         }
     }

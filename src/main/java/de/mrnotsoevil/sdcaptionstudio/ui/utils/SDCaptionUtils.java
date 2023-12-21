@@ -5,6 +5,7 @@ import org.fife.ui.rsyntaxtextarea.Theme;
 import org.hkijena.jipipe.ui.components.markdown.MarkdownDocument;
 import org.hkijena.jipipe.utils.JIPipeResourceManager;
 import org.hkijena.jipipe.utils.ResourceUtils;
+import org.hkijena.jipipe.utils.StringUtils;
 import org.hkijena.jipipe.utils.UIUtils;
 
 import javax.swing.*;
@@ -61,6 +62,14 @@ public class SDCaptionUtils {
                 ioe.printStackTrace();
             }
         }
+    }
+
+    public static boolean isValidTemplateContent(String content) {
+        if(content == null) {
+            return false;
+        }
+        content = content.trim();
+        return !StringUtils.isNullOrEmpty(content);
     }
 
     public static String toValidTemplateKey(String name) {

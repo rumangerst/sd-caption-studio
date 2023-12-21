@@ -11,7 +11,7 @@ import java.awt.*;
 
 public class SDCaptionTempleCellRenderer extends JPanel implements ListCellRenderer<SDCaptionTemplate> {
     private final SDCaptionProject project;
-    private final SolidColorIcon icon = new SolidColorIcon(8, 54);
+    private final SolidColorIcon icon = new SolidColorIcon(8, 48);
     private JLabel nameLabel;
     private JLabel captionLabel;
     private JLabel accessorLabel;
@@ -22,11 +22,11 @@ public class SDCaptionTempleCellRenderer extends JPanel implements ListCellRende
     }
 
     private void initialize() {
-        setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        Insets defaultInsets = new Insets(4, 4, 4, 4);
+        setBorder(BorderFactory.createEmptyBorder(4,4,4,4));
+        Insets defaultInsets = new Insets(2,2,2,2);
         setLayout(new GridBagLayout());
         nameLabel = new JLabel();
-        nameLabel.setFont(new Font(Font.DIALOG, Font.BOLD, 18));
+        nameLabel.setFont(new Font(Font.DIALOG, Font.BOLD, 16));
         captionLabel = new JLabel();
         captionLabel.setFont(new Font(Font.DIALOG, Font.ITALIC, 12));
         accessorLabel = new JLabel();

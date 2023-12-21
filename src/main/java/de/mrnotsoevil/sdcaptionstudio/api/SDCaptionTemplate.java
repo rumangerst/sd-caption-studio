@@ -20,6 +20,18 @@ public class SDCaptionTemplate extends AbstractJIPipeParameterCollection {
     private String key;
     private Color color = new Color(0x43A8E0);
 
+    public SDCaptionTemplate() {
+    }
+
+    public SDCaptionTemplate(SDCaptionTemplate other) {
+        this.project = other.project;
+        this.name = other.name;
+        this.description = new HTMLText(other.description);
+        this.content = other.content;
+        this.key = other.key;
+        this.color = other.color;
+    }
+
     @JIPipeDocumentation(name = "Name", description = "The name of the template")
     @JsonGetter("name")
     @JIPipeParameter(value = "name", uiOrder = -80)
@@ -78,11 +90,13 @@ public class SDCaptionTemplate extends AbstractJIPipeParameterCollection {
 
     @JIPipeDocumentation(name = "Key", description = "The key of this template")
     @JIPipeParameter(value = "key", uiOrder = -100, important = true)
+    @JsonSetter("key")
     public void setKey(String key) {
         this.key = key;
     }
 
     @JIPipeParameter("key")
+    @JsonGetter("key")
     public String getKey() {
         if(project != null) {
             return project.findTemplateKey(this);
@@ -108,5 +122,14 @@ public class SDCaptionTemplate extends AbstractJIPipeParameterCollection {
     public void copyMetadataFrom(SDCaptionTemplate other) {
         setName(other.getName());
         setDescription(new HTMLText(other.getDescription()));
+    }
+
+    public String getDisplayName() {
+        if(!StringUtils.isNullOrEmpty(name)) {
+            return name + " [@" + getKey() + "]";
+        }
+        else {
+            return "@" + getKey();
+        }
     }
 }

@@ -3,7 +3,6 @@ package de.mrnotsoevil.sdcaptionstudio.api;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.Lists;
 import de.mrnotsoevil.sdcaptionstudio.api.events.*;
 import de.mrnotsoevil.sdcaptionstudio.ui.utils.SDCaptionUtils;
 import ij.IJ;
@@ -14,12 +13,10 @@ import org.scijava.Disposable;
 
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class SDCaptionProject implements Disposable {
@@ -30,7 +27,7 @@ public class SDCaptionProject implements Disposable {
             = new SDCaptionProjectReloadedEventEmitter();
     private final SDCaptionProjectTemplatesChangedEventEmitter projectTemplatesChangedEventEmitter
             = new SDCaptionProjectTemplatesChangedEventEmitter();
-    private final Map<String, SDCaptionedImage> images = new HashMap<>();
+    private Map<String, SDCaptionedImage> images = new HashMap<>();
     private Path storagePath;
     private Path workDirectory;
     private Path projectFilePath;
@@ -124,9 +121,8 @@ public class SDCaptionProject implements Disposable {
 
             // Expand any editing caption
             for (SDCaptionedImage image : images.values()) {
-                if(image.isCaptionEdited()) {
-                    image.setEditedCaption(captionExpandTemplate(image.getShortenedCaption(), key, content, true));
-                }
+                image.setUserCaption(compileCaption(image.getUserCaption(), key, content, true));
+                image.setUserCaptionEdited(true);
             }
 
         }
@@ -151,8 +147,14 @@ public class SDCaptionProject implements Disposable {
         Disposable.super.dispose();
     }
 
+    @JsonGetter("images")
     public Map<String, SDCaptionedImage> getImages() {
         return Collections.unmodifiableMap(images);
+    }
+
+    @JsonSetter("images")
+    public void setImages(Map<String, SDCaptionedImage> images) {
+        this.images = images;
     }
 
     public void reset() {
@@ -186,16 +188,7 @@ public class SDCaptionProject implements Disposable {
                     image.setImagePath(path);
                     image.setCaptionPath(absoluteStoragePath.resolve(name + ".txt"));
 
-                    // Load caption if not edited by user
-                    if (!image.isCaptionEdited()) {
-                        if (Files.isRegularFile(image.getCaptionPath())) {
-                            try {
-                                image.setSavedCaption(new String(Files.readAllBytes(image.getCaptionPath()), StandardCharsets.UTF_8));
-                            } catch (IOException e) {
-                                IJ.handleException(e);
-                            }
-                        }
-                    }
+                    image.loadCaptionFromFile(false);
                 }
             });
         } catch (Exception e) {
@@ -216,8 +209,8 @@ public class SDCaptionProject implements Disposable {
         // Commit all changes
         if (saveCaptionsOnProjectSave) {
             for (SDCaptionedImage value : images.values()) {
-                if (value.isCaptionEdited()) {
-                    value.saveCaption();
+                if (value.isUserCaptionEdited()) {
+                    value.saveCaptionToFile();
                 }
             }
         }
@@ -235,34 +228,14 @@ public class SDCaptionProject implements Disposable {
         return projectReloadedEventEmitter;
     }
 
-
-
-    public String captionContractTemplates(String caption) {
-        List<Map.Entry<String, SDCaptionTemplate>> orderedEntries = templates.entrySet().stream().sorted(
-                Comparator.comparing((Map.Entry<String, SDCaptionTemplate> entry) ->
-                entry.getValue().getContent().length())).collect(Collectors.toList());
-        orderedEntries = Lists.reverse(orderedEntries);
-
-        // Contract from the largest to the smallest with spacing
-        caption = " " + caption + " "; // Safety-spacing
-
-        for (Map.Entry<String, SDCaptionTemplate> entry : orderedEntries) {
-            for (char c : SDCaptionUtils.TEMPLATE_SEPARATOR_CHARS) {
-                caption = caption.replace(c + entry.getValue().getContent() + c, c + "@" + SDCaptionUtils.toValidTemplateKey(entry.getKey()) + c);
-            }
-        }
-
-        return caption;
-    }
-
-    public String captionExpandTemplates(String caption) {
+    public String compileCaption(String caption) {
         for (Map.Entry<String, SDCaptionTemplate> entry : templates.entrySet()) {
-            caption = captionExpandTemplate(caption, entry.getKey(), entry.getValue().getContent(), true);
+            caption = compileCaption(caption, entry.getKey(), entry.getValue().getContent(), true);
         }
         return caption;
     }
 
-    private String captionExpandTemplate(String caption, String key, String content, boolean resolveNestedTemplates) {
+    private String compileCaption(String caption, String key, String content, boolean resolveNestedTemplates) {
         if (!caption.endsWith(" ")) {
             caption = caption + " ";
         }
@@ -279,7 +252,7 @@ public class SDCaptionProject implements Disposable {
                         continue;
                     }
                     visited.add(entry.getKey());
-                    String newContent = captionExpandTemplate(caption, entry.getKey(), entry.getValue().getContent(), false);
+                    String newContent = compileCaption(caption, entry.getKey(), entry.getValue().getContent(), false);
                     if(!newContent.equals(content)) {
                         changed = true;
                         content = newContent;
@@ -309,5 +282,18 @@ public class SDCaptionProject implements Disposable {
         }
 
         return null;
+    }
+
+    public void addTemplate(SDCaptionTemplate template, boolean allowOverwrite) {
+        String validKey = SDCaptionUtils.toValidTemplateKey(template.getKey());
+        if(!StringUtils.isNullOrEmpty(validKey)) {
+            if(!allowOverwrite) {
+                validKey = StringUtils.makeUniqueString(validKey, "_", templates.keySet());
+            }
+            templates.remove(validKey);
+            SDCaptionTemplate template1 = createTemplate(validKey, template.getContent());
+            template1.copyMetadataFrom(template);
+            projectTemplatesChangedEventEmitter.emit(new SDCaptionProjectTemplatesChangedEvent(this));
+        }
     }
 }
