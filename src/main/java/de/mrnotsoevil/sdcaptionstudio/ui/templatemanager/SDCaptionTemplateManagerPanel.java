@@ -109,16 +109,16 @@ public class SDCaptionTemplateManagerPanel extends SDCaptionProjectWorkbenchPane
                     UIUtils.getIconFromResources("actions/document-export.png"), this::exportTemplatesFromJson));
             if(currentlyEditedImage != null) {
                 target.addSeparator();
-                target.add(UIUtils.createMenuItem("Compile in current image", "Expands the selected template(s) in the current image",
+                target.add(UIUtils.createMenuItem("Remove templates in current image", "Expands the selected template(s) in the current image",
                         UIUtils.getIconFromResources("actions/code-context.png"), this::compileSelectedTemplatesInCurrentImage));
-                target.add(UIUtils.createMenuItem("Decompile in current image", "Replaces the the selected template(s) content by the @variable in all images",
+                target.add(UIUtils.createMenuItem("Detect templates in current image", "Replaces the the selected template(s) content by the @variable in all images",
                         UIUtils.getIconFromResources("actions/code-context.png"), this::decompileSelectedTemplatesInCurrentImage));
             }
 
             target.addSeparator();
-            target.add(UIUtils.createMenuItem("Compile in all images", "Expands the selected template(s) in all images",
+            target.add(UIUtils.createMenuItem("Remove templates in all images", "Expands the selected template(s) in all images",
                     UIUtils.getIconFromResources("actions/code-context.png"), this::compileSelectedTemplatesInAllImages));
-            target.add(UIUtils.createMenuItem("Decompile in all images", "Replaces the the selected template(s) content by the @variable in all images",
+            target.add(UIUtils.createMenuItem("Detect templates in all images", "Replaces the the selected template(s) content by the @variable in all images",
                     UIUtils.getIconFromResources("actions/code-context.png"), this::decompileSelectedTemplatesInAllImages));
 
         } else {
