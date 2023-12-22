@@ -42,11 +42,7 @@ public class SDCaptionProject implements Disposable {
         SDCaptionProject project = new SDCaptionProject();
         project.setProjectFilePath(file);
         project.setWorkDirectory(file.getParent());
-        try {
-            JsonUtils.getObjectMapper().readerForUpdating(project).readValue(file.toFile());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        project.reload();
         return project;
     }
 
@@ -122,7 +118,6 @@ public class SDCaptionProject implements Disposable {
             // Expand any editing caption
             for (SDCaptionedImage image : images.values()) {
                 image.setUserCaption(compileCaption(image.getUserCaption(), key, content, true));
-                image.setUserCaptionEdited(true);
             }
 
         }
@@ -157,13 +152,20 @@ public class SDCaptionProject implements Disposable {
         this.images = images;
     }
 
-    public void reset() {
-        images.clear();
-        reload();
-        // TODO: handle reload
-    }
-
     public void reload() {
+
+        // Load the project file if present
+        try {
+            if(Files.isRegularFile(projectFilePath)) {
+                JsonNode jsonData = JsonUtils.getObjectMapper().readValue(projectFilePath.toFile(), JsonNode.class);
+                JsonUtils.getObjectMapper().readerForUpdating(this).readValue(jsonData);
+            }
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        // Detect new images/load captions for them
         final FileNameExtensionFilter[] filters = new FileNameExtensionFilter[]{
                 UIUtils.EXTENSION_FILTER_PNG,
                 UIUtils.EXTENSION_FILTER_BMP,
@@ -198,13 +200,8 @@ public class SDCaptionProject implements Disposable {
         }
     }
 
-    public void readMetadataFromJson(JsonNode jsonData) throws IOException {
-        JsonUtils.getObjectMapper().readerForUpdating(this).readValue(jsonData);
-    }
-
     public void saveProject(Path file) throws IOException {
         relativizeStoragePath();
-        JsonUtils.saveToFile(this, file);
 
         // Commit all changes
         if (saveCaptionsOnProjectSave) {
@@ -214,6 +211,8 @@ public class SDCaptionProject implements Disposable {
                 }
             }
         }
+
+        JsonUtils.saveToFile(this, file);
     }
 
     public SDCaptionedImagePropertyUpdatedEventEmitter getCaptionedImagePropertyUpdatedEventEmitter() {
@@ -235,7 +234,23 @@ public class SDCaptionProject implements Disposable {
         return caption;
     }
 
-    private String compileCaption(String caption, String key, String content, boolean resolveNestedTemplates) {
+    public String decompileCaption(String caption, String key, String content) {
+        if(!caption.startsWith(" ")) {
+            caption = " " + caption;
+        }
+        if(!caption.endsWith(" ")) {
+            caption = caption + " ";
+        }
+        content = compileCaption(content);
+        for (char c1 : SDCaptionUtils.TEMPLATE_SEPARATOR_CHARS) {
+            for (char c2 : SDCaptionUtils.TEMPLATE_SEPARATOR_CHARS) {
+                caption = caption.replace(c1 + content + c2, c1 + "@" + key + c2);
+            }
+        }
+        return caption;
+    }
+
+    public String compileCaption(String caption, String key, String content, boolean resolveNestedTemplates) {
         if (!caption.endsWith(" ")) {
             caption = caption + " ";
         }

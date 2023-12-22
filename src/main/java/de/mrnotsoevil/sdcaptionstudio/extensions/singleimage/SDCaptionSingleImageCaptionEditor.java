@@ -2,6 +2,7 @@ package de.mrnotsoevil.sdcaptionstudio.extensions.singleimage;
 
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionTemplate;
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionedImage;
+import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionedImageProperty;
 import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionProjectTemplatesChangedEvent;
 import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionProjectTemplatesChangedEventListener;
 import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionedImagePropertyUpdatedEvent;
@@ -41,6 +42,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
+import java.util.List;
 
 public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbenchPanel implements SDCaptionedImagePropertyUpdatedEventListener, SDCaptionProjectTemplatesChangedEventListener {
     private final SDCaptionSingleImageView view;
@@ -52,8 +54,10 @@ public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbench
     private final NewThrobberIcon autoSaveSavingIcon = new NewThrobberIcon(this);
     private final JToggleButton autoSaveToggle = new JToggleButton("Auto-save", UIUtils.getIconFromResources("actions/view-refresh.png"), true);
     private final Timer captionSaveTimer;
+    private final JPopupMenu historyMenu = new JPopupMenu();
     private SDCaptionedImage currentlyEditedImage;
     private boolean loading;
+    private boolean editing;
     private final SDCaptionTemplateManagerPanel templateManagerPanel;
 
     public SDCaptionSingleImageCaptionEditor(SDCaptionSingleImageView view, SDCaptionProjectWorkbench workbench) {
@@ -255,17 +259,45 @@ public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbench
 
     private void initializeTopToolbar(JToolBar topToolbar) {
 
-        topToolbar.add(Box.createHorizontalGlue());
-
         saveButton.addActionListener(e -> saveCaptionImmediately());
         topToolbar.add(saveButton);
 
+        JButton historyButton = new JButton("History", UIUtils.getIconFromResources("actions/view-history.png"));
+        UIUtils.addReloadablePopupMenuToButton(historyButton, historyMenu, this::reloadHistoryMenu );
+        topToolbar.add(historyButton);
+
+        topToolbar.add(Box.createHorizontalGlue());
+
+        topToolbar.add(autoSaveToggle);
         autoSaveToggle.addActionListener(e -> {
             if (autoSaveToggle.isSelected()) {
                 saveCaptionLater();
             }
         });
-        topToolbar.add(autoSaveToggle);
+    }
+
+    private void reloadHistoryMenu() {
+        historyMenu.removeAll();
+        JComponent currentMenu = historyMenu;
+        SDCaptionedImage image = currentlyEditedImage;
+        if(image != null && !image.getSavedUserCaptionHistory().isEmpty()) {
+            List<String> savedUserCaptionHistory = image.getSavedUserCaptionHistory();
+            for (int i = savedUserCaptionHistory.size() - 1; i >= 0; i--) {
+                String caption = savedUserCaptionHistory.get(i);
+                currentMenu.add(UIUtils.createMenuItem(caption, "", UIUtils.getIconFromResources("actions/edit-select-text.png"),
+                        () -> {
+                            image.setUserCaption(caption);
+                        }));
+                if(currentMenu.getComponentCount() >= 10) {
+                    currentMenu = new JMenu("More ...");
+                }
+            }
+        }
+        else {
+            JMenuItem nothing = new JMenuItem("No items to show");
+            nothing.setEnabled(false);
+            currentMenu.add(nothing);
+        }
     }
 
     private void saveCaptionLater() {
@@ -276,8 +308,13 @@ public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbench
 
     private void updateCaptionFromTextEditor() {
         if (currentlyEditedImage != null) {
-            currentlyEditedImage.setUserCaption(captionEditor.getText());
-            currentlyEditedImage.setUserCaptionEdited(true);
+            try {
+                editing = true;
+                currentlyEditedImage.setUserCaption(captionEditor.getText());
+            }
+            finally {
+                editing = false;
+            }
 
             // Update preview
             captionPreview.setText(currentlyEditedImage.getCompiledUserCaption());
@@ -304,6 +341,7 @@ public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbench
             getProjectWorkbench().sendStatusBarText("Auto-save of " + currentlyEditedImage.getName() + " was interrupted!");
         }
         this.currentlyEditedImage = captionedImage;
+        this.templateManagerPanel.setCurrentlyEditedImage(captionedImage);
         reload();
     }
 
@@ -324,9 +362,12 @@ public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbench
     }
 
     @Override
-    public void onCaptionedImageInfoUpdated(SDCaptionedImagePropertyUpdatedEvent event) {
+    public void onCaptionedImagePropertyUpdated(SDCaptionedImagePropertyUpdatedEvent event) {
         if (event.getImage() == currentlyEditedImage && currentlyEditedImage.isUserCaptionEdited() && autoSaveToggle.isSelected()) {
             saveCaptionLater();
+        }
+        if(event.getImage() == currentlyEditedImage && event.getProperty() == SDCaptionedImageProperty.UserCaption && !editing) {
+            captionEditor.setText(currentlyEditedImage.getUserCaption());
         }
     }
 

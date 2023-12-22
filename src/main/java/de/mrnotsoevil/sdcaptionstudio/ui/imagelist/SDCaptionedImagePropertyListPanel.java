@@ -59,7 +59,7 @@ public class SDCaptionedImagePropertyListPanel extends SDCaptionProjectWorkbench
     }
 
     @Override
-    public void onCaptionedImageInfoUpdated(SDCaptionedImagePropertyUpdatedEvent event) {
+    public void onCaptionedImagePropertyUpdated(SDCaptionedImagePropertyUpdatedEvent event) {
         if (imageList.isDisplayable()) {
             imageList.repaint();
         }

@@ -5,6 +5,6 @@ import org.hkijena.jipipe.api.events.JIPipeEventEmitter;
 public class SDCaptionedImagePropertyUpdatedEventEmitter extends JIPipeEventEmitter<SDCaptionedImagePropertyUpdatedEvent, SDCaptionedImagePropertyUpdatedEventListener> {
     @Override
     protected void call(SDCaptionedImagePropertyUpdatedEventListener listener, SDCaptionedImagePropertyUpdatedEvent event) {
-        listener.onCaptionedImageInfoUpdated(event);
+        listener.onCaptionedImagePropertyUpdated(event);
     }
 }

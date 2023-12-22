@@ -13,7 +13,6 @@
 
 package de.mrnotsoevil.sdcaptionstudio.ui;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionProject;
 import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionSplashScreen;
 import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionWelcomePanel;
@@ -30,7 +29,6 @@ import org.hkijena.jipipe.ui.events.WindowClosedEventEmitter;
 import org.hkijena.jipipe.ui.events.WindowOpenedEvent;
 import org.hkijena.jipipe.ui.events.WindowOpenedEventEmitter;
 import org.hkijena.jipipe.utils.UIUtils;
-import org.hkijena.jipipe.utils.json.JsonUtils;
 import org.scijava.Context;
 
 import javax.swing.*;
@@ -189,65 +187,43 @@ public class SDCaptionProjectWindow extends JFrame {
         JIPipeNotificationInbox notifications = new JIPipeNotificationInbox();
         if (Files.isDirectory(projectFileOrDirectory)) {
             // Autoload from directory
-            Path projectFile = projectFileOrDirectory.resolve("sd-caption-studio.project.json");
-            if (Files.isRegularFile(projectFile)) {
-                projectFileOrDirectory = projectFile;
-            }
+            projectFileOrDirectory = projectFileOrDirectory.resolve("sd-caption-studio.project.json");
         }
-        SDCaptionProject project = null;
-        if (Files.isDirectory(projectFileOrDirectory)) {
-            // Still a directory, so create a new project
-            project = new SDCaptionProject();
-            project.setWorkDirectory(projectFileOrDirectory);
-            project.setStoragePath(projectFileOrDirectory);
+        SDCaptionProject project =  SDCaptionProject.loadProject(projectFileOrDirectory);
 
-        } else if (Files.isRegularFile(projectFileOrDirectory)) {
-            // Load a project file
-            JIPipeValidationReport report = new JIPipeValidationReport();
+        // Load a project file
+        JIPipeValidationReport report = new JIPipeValidationReport();
+        notifications.connectDismissTo(JIPipeNotificationInbox.getInstance());
 
-            notifications.connectDismissTo(JIPipeNotificationInbox.getInstance());
-            try {
-                JsonNode jsonData = JsonUtils.getObjectMapper().readValue(projectFileOrDirectory.toFile(), JsonNode.class);
-                project = new SDCaptionProject();
-                project.setWorkDirectory(projectFileOrDirectory.getParent());
-                project.readMetadataFromJson(jsonData);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            if (!report.isValid()) {
-                UIUtils.openValidityReportDialog(new JIPipeDummyWorkbench(), this, report, "Errors while loading the project",
-                        "It seems that some data could be be loaded/restored. " +
-                                "Please review the entries and apply the necessary changes.", false);
-            }
+        if (!report.isValid()) {
+            UIUtils.openValidityReportDialog(new JIPipeDummyWorkbench(), this, report, "Errors while loading the project",
+                    "It seems that some data could be be loaded/restored. " +
+                            "Please review the entries and apply the necessary changes.", false);
         }
 
         // Load project into window
-        if (project != null) {
-            SDCaptionProjectWindow window;
-            if (forceCurrentWindow) {
-                window = this;
-                loadProject(project);
-            } else {
-                window = openProjectInThisOrNewWindow("Open project", project, false);
-            }
-            if (window == null)
-                return;
-            window.projectSavePath = projectFileOrDirectory;
-            window.getProjectUI().sendStatusBarText("Opened project from " + window.projectSavePath);
-            window.updateTitle();
-            ProjectsSettings.getInstance().addRecentProject(projectFileOrDirectory);
-            if (!notifications.isEmpty()) {
-                UIUtils.openNotificationsDialog(window.getProjectUI(),
-                        this,
-                        notifications,
-                        "Potential issues found",
-                        "There seem to be potential issues that might prevent the successful execution of the pipeline. Please review the following entries and resolve the issues if possible.",
-                        true);
-            }
-            FileChooserSettings.getInstance().setLastDirectoryBy(FileChooserSettings.LastDirectoryKey.Projects, projectFileOrDirectory.getParent());
+        SDCaptionProjectWindow window;
+        if (forceCurrentWindow) {
+            window = this;
+            loadProject(project);
         } else {
-            JOptionPane.showMessageDialog(this, "Unable to load or create a project!", "Open project", JOptionPane.ERROR_MESSAGE);
+            window = openProjectInThisOrNewWindow("Open project", project, false);
         }
+        if (window == null)
+            return;
+        window.projectSavePath = projectFileOrDirectory;
+        window.getProjectUI().sendStatusBarText("Opened project from " + window.projectSavePath);
+        window.updateTitle();
+        ProjectsSettings.getInstance().addRecentProject(projectFileOrDirectory);
+        if (!notifications.isEmpty()) {
+            UIUtils.openNotificationsDialog(window.getProjectUI(),
+                    this,
+                    notifications,
+                    "Potential issues found",
+                    "There seem to be potential issues that might prevent the successful execution of the pipeline. Please review the following entries and resolve the issues if possible.",
+                    true);
+        }
+        FileChooserSettings.getInstance().setLastDirectoryBy(FileChooserSettings.LastDirectoryKey.Projects, projectFileOrDirectory.getParent());
     }
 
     /**

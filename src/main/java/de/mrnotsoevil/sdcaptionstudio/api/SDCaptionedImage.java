@@ -11,6 +11,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 public class SDCaptionedImage {
 
@@ -21,7 +24,8 @@ public class SDCaptionedImage {
     private SDCaptionedImageInfo currentImageInfo;
     private SDCaptionedImageInfoLoader imageInfoLoader;
     private String userCaption;
-    private boolean userCaptionEdited = false;
+    private String savedUserCaption;
+    private List<String> savedUserCaptionHistory = new ArrayList<>();
 
     public SDCaptionedImageInfo getCurrentImageInfo() {
         return currentImageInfo;
@@ -29,10 +33,7 @@ public class SDCaptionedImage {
 
     public void setCurrentImageInfo(SDCaptionedImageInfo currentImageInfo) {
         this.currentImageInfo = currentImageInfo;
-        if (project != null) {
-            project.getCaptionedImagePropertyUpdatedEventEmitter().emit(
-                    new SDCaptionedImagePropertyUpdatedEvent(this, SDCaptionedImageProperty.ImageInfo));
-        }
+        emitPropertyChanged(SDCaptionedImageProperty.ImageInfo);
     }
 
     public SDCaptionedImageInfo getImageInfoForUI() {
@@ -89,27 +90,35 @@ public class SDCaptionedImage {
         return userCaption;
     }
 
+    public String getNonNullTrimmedUserCaption() {
+        return StringUtils.nullToEmpty(userCaption).trim();
+    }
+
     @JsonSetter("user-caption")
     public void setUserCaption(String userCaption) {
         this.userCaption = userCaption;
-        if(project != null) {
-            project.getCaptionedImagePropertyUpdatedEventEmitter().emit(
-                    new SDCaptionedImagePropertyUpdatedEvent(this, SDCaptionedImageProperty.Caption));
-        }
+        emitPropertyChanged(SDCaptionedImageProperty.UserCaption);
     }
 
-    @JsonGetter("user-caption-edited")
-    public boolean isUserCaptionEdited() {
-        return userCaptionEdited;
+    @JsonGetter("saved-user-caption")
+    public String getSavedUserCaption() {
+        return savedUserCaption;
     }
 
-    @JsonSetter("user-caption-edited")
-    public void setUserCaptionEdited(boolean userCaptionEdited) {
-        this.userCaptionEdited = userCaptionEdited;
-        if(project != null) {
-            project.getCaptionedImagePropertyUpdatedEventEmitter().emit(
-                    new SDCaptionedImagePropertyUpdatedEvent(this, SDCaptionedImageProperty.CaptionEdited));
-        }
+    @JsonSetter("saved-user-caption")
+    public void setSavedUserCaption(String savedUserCaption) {
+        this.savedUserCaption = savedUserCaption;
+        emitPropertyChanged(SDCaptionedImageProperty.SavedCaption);
+    }
+
+    @JsonGetter("saved-user-caption-history")
+    public List<String> getSavedUserCaptionHistory() {
+        return savedUserCaptionHistory;
+    }
+
+    @JsonSetter("saved-user-caption-history")
+    public void setSavedUserCaptionHistory(List<String> savedUserCaptionHistory) {
+        this.savedUserCaptionHistory = savedUserCaptionHistory;
     }
 
     public String getCompiledUserCaption() {
@@ -117,8 +126,14 @@ public class SDCaptionedImage {
     }
 
     public void saveCaptionToFile() throws IOException {
-        Files.write(getCaptionPath(), getCompiledUserCaption().getBytes(StandardCharsets.UTF_8));
-        setUserCaptionEdited(false);
+        String compiledUserCaption = getCompiledUserCaption();
+        Files.write(getCaptionPath(), compiledUserCaption.getBytes(StandardCharsets.UTF_8));
+        setSavedUserCaption(compiledUserCaption);
+
+        // Add to history
+        String s = getNonNullTrimmedUserCaption();
+        savedUserCaptionHistory.remove(s);
+        savedUserCaptionHistory.add(s);
     }
 
     public void loadCaptionFromFile(boolean overwrite) {
@@ -126,7 +141,18 @@ public class SDCaptionedImage {
             try {
                 if (Files.isRegularFile(captionPath)) {
                     setUserCaption(new String(Files.readAllBytes(captionPath), StandardCharsets.UTF_8));
-                    setUserCaptionEdited(false);
+                    setSavedUserCaption(getUserCaption());
+                }
+            } catch (IOException e) {
+                IJ.handleException(e);
+            }
+        }
+        else if(savedUserCaption == null) {
+            // Restore saved caption
+            try {
+                if (Files.isRegularFile(captionPath)) {
+                    setSavedUserCaption(new String(Files.readAllBytes(captionPath), StandardCharsets.UTF_8));
+                    savedUserCaptionHistory.add(getSavedUserCaption());
                 }
             } catch (IOException e) {
                 IJ.handleException(e);
@@ -147,5 +173,16 @@ public class SDCaptionedImage {
     public String getTokenInfoString() {
         int numTokens = getNumTokens();
         return numTokens + " / " + (int) Math.max(1, Math.ceil(numTokens * 1.0 / 75)) * 75;
+    }
+
+    public boolean isUserCaptionEdited() {
+        return !Objects.equals(StringUtils.nullToEmpty(savedUserCaption).trim(), getCompiledUserCaption().trim());
+    }
+
+    public void emitPropertyChanged(SDCaptionedImageProperty property) {
+        if(getProject() != null) {
+            getProject().getCaptionedImagePropertyUpdatedEventEmitter().emit(
+                    new SDCaptionedImagePropertyUpdatedEvent(this, property));
+        }
     }
 }

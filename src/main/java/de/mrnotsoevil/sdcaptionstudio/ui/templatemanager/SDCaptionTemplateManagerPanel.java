@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.ImmutableList;
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionTemplate;
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionedImage;
+import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionedImageProperty;
 import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionProjectTemplatesChangedEvent;
 import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionProjectTemplatesChangedEventListener;
 import de.mrnotsoevil.sdcaptionstudio.ui.SDCaptionProjectWorkbench;
@@ -26,15 +27,15 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class SDCaptionTemplateManagerPanel extends SDCaptionProjectWorkbenchPanel implements SDCaptionProjectTemplatesChangedEventListener {
     private final JToolBar toolBar = new JToolBar();
     private final JList<SDCaptionTemplate> templateJList = new JList<>();
     private final SearchTextField searchTextField = new SearchTextField();
+    private SDCaptionedImage currentlyEditedImage;
 
     public SDCaptionTemplateManagerPanel(SDCaptionProjectWorkbench workbench) {
         super(workbench);
@@ -77,6 +78,10 @@ public class SDCaptionTemplateManagerPanel extends SDCaptionProjectWorkbenchPane
         add(new JScrollPane(templateJList), BorderLayout.CENTER);
     }
 
+    public SDCaptionedImage getCurrentlyEditedImage() {
+        return currentlyEditedImage;
+    }
+
     private void createContextMenu(JPopupMenu target) {
         if (templateJList.getSelectedValue() != null) {
             target.add(UIUtils.createMenuItem("Edit ...", "Edit the selected template",
@@ -102,6 +107,19 @@ public class SDCaptionTemplateManagerPanel extends SDCaptionProjectWorkbenchPane
                     UIUtils.getIconFromResources("actions/document-import.png"), this::importTemplatesFromJson));
             target.add(UIUtils.createMenuItem("Export to *.json ...", "Exports the selected templates as JSON file",
                     UIUtils.getIconFromResources("actions/document-export.png"), this::exportTemplatesFromJson));
+            if(currentlyEditedImage != null) {
+                target.addSeparator();
+                target.add(UIUtils.createMenuItem("Compile in current image", "Expands the selected template(s) in the current image",
+                        UIUtils.getIconFromResources("actions/code-context.png"), this::compileSelectedTemplatesInCurrentImage));
+                target.add(UIUtils.createMenuItem("Decompile in current image", "Replaces the the selected template(s) content by the @variable in all images",
+                        UIUtils.getIconFromResources("actions/code-context.png"), this::decompileSelectedTemplatesInCurrentImage));
+            }
+
+            target.addSeparator();
+            target.add(UIUtils.createMenuItem("Compile in all images", "Expands the selected template(s) in all images",
+                    UIUtils.getIconFromResources("actions/code-context.png"), this::compileSelectedTemplatesInAllImages));
+            target.add(UIUtils.createMenuItem("Decompile in all images", "Replaces the the selected template(s) content by the @variable in all images",
+                    UIUtils.getIconFromResources("actions/code-context.png"), this::decompileSelectedTemplatesInAllImages));
 
         } else {
             target.add(UIUtils.createMenuItem("New ...",
@@ -115,7 +133,56 @@ public class SDCaptionTemplateManagerPanel extends SDCaptionProjectWorkbenchPane
             target.add(UIUtils.createMenuItem("Import from *.json ...", "Imports the selected templates from a JSON file",
                     UIUtils.getIconFromResources("actions/document-import.png"), this::importTemplatesFromJson));
         }
+    }
 
+    private void decompileSelectedTemplatesInAllImages() {
+        List<SDCaptionTemplate> templates = new ArrayList<>(templateJList.getSelectedValuesList());
+        templates.sort(Comparator.comparing((SDCaptionTemplate template) -> template.getContent().length()).reversed());
+        if(!templates.isEmpty()) {
+            for (SDCaptionedImage image : getProject().getImages().values()) {
+                String caption = image.getNonNullTrimmedUserCaption();
+                for (SDCaptionTemplate template : templates) {
+                    caption = getProject().decompileCaption(caption, template.getKey(), template.getContent());
+                }
+                image.setUserCaption(caption);
+            }
+        }
+    }
+
+    private void compileSelectedTemplatesInAllImages() {
+        ImmutableList<SDCaptionTemplate> templates = ImmutableList.copyOf(templateJList.getSelectedValuesList());
+        if(!templates.isEmpty()) {
+            for (SDCaptionedImage image : getProject().getImages().values()) {
+                String caption = image.getNonNullTrimmedUserCaption();
+                for (SDCaptionTemplate template : templates) {
+                    caption = getProject().compileCaption(caption, template.getKey(), template.getContent(), true);
+                }
+                image.setUserCaption(caption);
+            }
+        }
+    }
+
+    private void decompileSelectedTemplatesInCurrentImage() {
+        List<SDCaptionTemplate> templates = new ArrayList<>(templateJList.getSelectedValuesList());
+        templates.sort(Comparator.comparing((SDCaptionTemplate template) -> template.getContent().length()).reversed());
+        if(currentlyEditedImage !=null && !templates.isEmpty()) {
+            String caption = currentlyEditedImage.getNonNullTrimmedUserCaption();
+            for (SDCaptionTemplate template : templates) {
+                caption = getProject().decompileCaption(caption, template.getKey(), template.getContent());
+            }
+            currentlyEditedImage.setUserCaption(caption);
+        }
+    }
+
+    private void compileSelectedTemplatesInCurrentImage() {
+        ImmutableList<SDCaptionTemplate> templates = ImmutableList.copyOf(templateJList.getSelectedValuesList());
+        if(currentlyEditedImage !=null && !templates.isEmpty()) {
+            String caption = currentlyEditedImage.getNonNullTrimmedUserCaption();
+            for (SDCaptionTemplate template : templates) {
+                caption = getProject().compileCaption(caption, template.getKey(), template.getContent(), true);
+            }
+            currentlyEditedImage.setUserCaption(caption);
+        }
     }
 
     private void deleteTemplates() {
@@ -262,7 +329,7 @@ public class SDCaptionTemplateManagerPanel extends SDCaptionProjectWorkbenchPane
         reload();
     }
 
-    public void createNewTemplate(String content) {
+    public SDCaptionTemplate createNewTemplate(String content) {
         if (SDCaptionUtils.isValidTemplateContent(content)) {
 
             SDCaptionTemplate template = new SDCaptionTemplate();
@@ -298,11 +365,54 @@ public class SDCaptionTemplateManagerPanel extends SDCaptionProjectWorkbenchPane
                             SDCaptionTemplate newTemplate = getProject().createTemplate(template.getKey(), template.getContent());
                             newTemplate.copyMetadataFrom(template);
                             getProject().getProjectTemplatesChangedEventEmitter().emit(new SDCaptionProjectTemplatesChangedEvent(getProject()));
-                            break;
+
+                            applyTemplateToCaptionedImages(newTemplate);
+
+                            return newTemplate;
                         }
                     }
                 } else {
-                    break;
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+
+    private void applyTemplateToCaptionedImages(SDCaptionTemplate template) {
+        if(currentlyEditedImage != null) {
+            JCheckBox applyToAllCheckbox = new JCheckBox("Apply to all images", true);
+            if(JOptionPane.showConfirmDialog(this, UIUtils.boxVertical(
+                    new JLabel("Do you want to replace all occurrences of '" + template.getContent() + "' in the current caption by @" + template.getKey() + "?"),
+                    applyToAllCheckbox),
+                    "Apply template",
+                    JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                if(applyToAllCheckbox.isSelected()) {
+                    for (SDCaptionedImage image : getProject().getImages().values()) {
+                        String decompiled = getProject().decompileCaption(image.getNonNullTrimmedUserCaption(), template.getKey(), template.getContent());
+                        if(!decompiled.equals(image.getNonNullTrimmedUserCaption())) {
+                            image.setUserCaption(decompiled);
+                        }
+                    }
+                }
+                else {
+                    String decompiled = getProject().decompileCaption(currentlyEditedImage.getNonNullTrimmedUserCaption(), template.getKey(), template.getContent());
+                    if(!decompiled.equals(currentlyEditedImage.getNonNullTrimmedUserCaption())) {
+                        currentlyEditedImage.setUserCaption(decompiled);
+                    }
+                }
+            }
+        }
+        else {
+            if(JOptionPane.showConfirmDialog(this, UIUtils.boxVertical(
+                            new JLabel("Do you want to replace all occurrences of '" + template.getContent() + "' in all captions by @" + template.getKey() + "?")),
+                    "Apply template",
+                    JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                for (SDCaptionedImage image : getProject().getImages().values()) {
+                    String decompiled = getProject().decompileCaption(image.getNonNullTrimmedUserCaption(), template.getKey(), template.getContent());
+                    if(!decompiled.equals(image.getNonNullTrimmedUserCaption())) {
+                        image.setUserCaption(decompiled);
+                    }
                 }
             }
         }
@@ -357,12 +467,16 @@ public class SDCaptionTemplateManagerPanel extends SDCaptionProjectWorkbenchPane
                 if(contentChanged) {
                     for (SDCaptionedImage image : getProject().getImages().values()) {
                         if(image.getUserCaption() != null && image.getUserCaption().contains("@" + copy.getKey())) {
-                            image.setUserCaptionEdited(true);
+                            image.emitPropertyChanged(SDCaptionedImageProperty.UserCaption);
                         }
                     }
                 }
                 break;
             }
         }
+    }
+
+    public void setCurrentlyEditedImage(SDCaptionedImage currentlyEditedImage) {
+        this.currentlyEditedImage = currentlyEditedImage;
     }
 }
