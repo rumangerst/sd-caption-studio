@@ -2,6 +2,7 @@ package de.mrnotsoevil.sdcaptionstudio.ui.templatemanager;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.ImmutableList;
+import com.google.common.primitives.Ints;
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionTemplate;
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionedImage;
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionedImageProperty;
@@ -65,8 +66,12 @@ public class SDCaptionTemplateManagerPanel extends SDCaptionProjectWorkbenchPane
                 if (SwingUtilities.isRightMouseButton(e)) {
                     int i = templateJList.locationToIndex(e.getPoint());
                     if (i >= 0) {
-                        templateJList.addSelectionInterval(i, i);
+                        if(!Ints.contains(templateJList.getSelectedIndices(), i)) {
+                            templateJList.clearSelection();
+                            templateJList.addSelectionInterval(i, i);
+                        }
                     }
+
                     JPopupMenu menu = new JPopupMenu();
                     createContextMenu(menu);
                     menu.show(templateJList, e.getX(), e.getY());

@@ -8,7 +8,7 @@ import org.hkijena.jipipe.utils.UIUtils;
 import javax.swing.*;
 import java.awt.*;
 
-public class SDCaptionedImageListCellRenderer extends JPanel implements ListCellRenderer<SDCaptionedImage> {
+public class SDCaptionedFullImageListCellRenderer extends JPanel implements ListCellRenderer<SDCaptionedImage> {
     private final SDCaptionProject project;
     private int thumbnailSize = 64;
     private JLabel thumbnailLabel;
@@ -16,7 +16,7 @@ public class SDCaptionedImageListCellRenderer extends JPanel implements ListCell
     private JLabel captionLabel;
     private JLabel sizeLabel;
 
-    public SDCaptionedImageListCellRenderer(SDCaptionProject project) {
+    public SDCaptionedFullImageListCellRenderer(SDCaptionProject project) {
         this.project = project;
         initialize();
     }
@@ -33,7 +33,7 @@ public class SDCaptionedImageListCellRenderer extends JPanel implements ListCell
         nameLabel = new JLabel();
         nameLabel.setFont(new Font(Font.DIALOG, Font.BOLD, 18));
         captionLabel = new JLabel();
-        captionLabel.setFont(new Font(Font.DIALOG, Font.ITALIC, 12));
+        captionLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         sizeLabel = new JLabel();
         sizeLabel.setFont(new Font(Font.DIALOG, Font.PLAIN, 12));
 
@@ -86,11 +86,11 @@ public class SDCaptionedImageListCellRenderer extends JPanel implements ListCell
                 sizeLabel.setText(info.getSize());
             }
 
-            String tokenInfoString = value.getTokenInfoString();
+            String tokenInfoString = value.getUserCaption();
 
             if (value.isUserCaptionEdited()) {
                 captionLabel.setIcon(UIUtils.getIconFromResources("emblems/emblem-important-blue.png"));
-                captionLabel.setText(tokenInfoString + " (unsaved)");
+                captionLabel.setText("(unsaved) " + tokenInfoString);
             } else {
                 captionLabel.setIcon(UIUtils.getIconFromResources("emblems/checkmark.png"));
                 captionLabel.setText(tokenInfoString);

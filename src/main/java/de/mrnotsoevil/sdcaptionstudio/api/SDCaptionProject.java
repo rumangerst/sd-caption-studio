@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.mrnotsoevil.sdcaptionstudio.api.events.*;
 import de.mrnotsoevil.sdcaptionstudio.ui.utils.SDCaptionUtils;
 import ij.IJ;
+import org.hkijena.jipipe.utils.NaturalOrderComparator;
 import org.hkijena.jipipe.utils.StringUtils;
 import org.hkijena.jipipe.utils.UIUtils;
 import org.hkijena.jipipe.utils.json.JsonUtils;
@@ -310,5 +311,95 @@ public class SDCaptionProject implements Disposable {
             template1.copyMetadataFrom(template);
             projectTemplatesChangedEventEmitter.emit(new SDCaptionProjectTemplatesChangedEvent(this));
         }
+    }
+
+    public void duplicateImage(String name, String newName) {
+        SDCaptionedImage image = images.get(name);
+        if(image == null) {
+            return;
+        }
+        if(newName == null || images.containsKey(newName)) {
+            newName = StringUtils.makeUniqueString(newName, "_", images.keySet());
+        }
+        String imageExtension = image.getImagePath().getFileName().toString();
+        imageExtension = imageExtension.substring(imageExtension.lastIndexOf('.'));
+        Path newImageFile = getWorkDirectory().resolve(image.getImagePath().getParent()).resolve(newName + imageExtension);
+        Path newCaptionFile = getWorkDirectory().resolve(image.getCaptionPath().getParent()).resolve(newName + ".txt");
+        try {
+            Files.copy(image.getImagePath(), newImageFile);
+            if(Files.isRegularFile(image.getCaptionPath())) {
+                Files.copy(image.getCaptionPath(), newCaptionFile);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        SDCaptionedImage newCaptionedImage = new SDCaptionedImage(image);
+        newCaptionedImage.setName(newName);
+        newCaptionedImage.setImagePath(newImageFile);
+        newCaptionedImage.setCaptionPath(newCaptionFile);
+        images.put(newName, newCaptionedImage);
+        projectReloadedEventEmitter.emit(new SDCaptionProjectReloadedEvent(this));
+    }
+
+    public void deleteImage(String name) {
+        SDCaptionedImage image = images.get(name);
+        if(image == null) {
+            return;
+        }
+        try {
+            if(Files.isRegularFile(image.getImagePath())) {
+                Files.delete(image.getImagePath());
+            }
+            if(Files.isRegularFile(image.getCaptionPath())) {
+                Files.delete(image.getCaptionPath());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        images.remove(name);
+        projectReloadedEventEmitter.emit(new SDCaptionProjectReloadedEvent(this));
+    }
+
+    public void renameImage(String oldName, String newName) {
+        SDCaptionedImage image = images.get(oldName);
+        if(image == null) {
+            return;
+        }
+        if(newName == null || images.containsKey(newName)) {
+            newName = StringUtils.makeUniqueString(newName, "_", images.keySet());
+        }
+        String imageExtension = image.getImagePath().getFileName().toString();
+        imageExtension = imageExtension.substring(imageExtension.lastIndexOf('.'));
+        Path newImageFile = getWorkDirectory().resolve(image.getImagePath().getParent()).resolve(newName + imageExtension);
+        Path newCaptionFile = getWorkDirectory().resolve(image.getCaptionPath().getParent()).resolve(newName + ".txt");
+        try {
+            // Copy to new name
+            Files.copy(image.getImagePath(), newImageFile);
+            if(Files.isRegularFile(image.getCaptionPath())) {
+                Files.copy(image.getCaptionPath(), newCaptionFile);
+            }
+            // Remove old file
+            if(Files.isRegularFile(image.getImagePath())) {
+                Files.delete(image.getImagePath());
+            }
+            if(Files.isRegularFile(image.getCaptionPath())) {
+                Files.delete(image.getCaptionPath());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        image.setName(newName);
+        image.setImagePath(newImageFile);
+        image.setCaptionPath(newCaptionFile);
+        images.remove(oldName);
+        images.put(newName, image);
+        projectReloadedEventEmitter.emit(new SDCaptionProjectReloadedEvent(this));
+    }
+
+    public List<SDCaptionedImage> getSortedImages() {
+        List<SDCaptionedImage> images = new ArrayList<>(getImages().values());
+        images.sort(Comparator.comparing(SDCaptionedImage::getName, NaturalOrderComparator.INSTANCE));
+        return images;
     }
 }

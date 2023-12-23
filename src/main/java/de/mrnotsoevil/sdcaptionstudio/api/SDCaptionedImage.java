@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionedImagePropertyUpdatedEvent;
 import ij.IJ;
+import ij.ImagePlus;
 import org.hkijena.jipipe.utils.StringUtils;
 import org.hkijena.jipipe.utils.UIUtils;
 
@@ -26,6 +27,19 @@ public class SDCaptionedImage {
     private String userCaption;
     private String savedUserCaption;
     private List<String> savedUserCaptionHistory = new ArrayList<>();
+
+    public SDCaptionedImage() {
+    }
+
+    public SDCaptionedImage(SDCaptionedImage other) {
+        this.project = other.project;
+        this.name = other.name;
+        this.imagePath = other.imagePath;
+        this.captionPath = other.captionPath;
+        this.userCaption = other.userCaption;
+        this.savedUserCaption = other.savedUserCaption;
+        this.savedUserCaptionHistory = new ArrayList<>(other.savedUserCaptionHistory);
+    }
 
     public SDCaptionedImageInfo getCurrentImageInfo() {
         return currentImageInfo;
@@ -184,5 +198,9 @@ public class SDCaptionedImage {
             getProject().getCaptionedImagePropertyUpdatedEventEmitter().emit(
                     new SDCaptionedImagePropertyUpdatedEvent(this, property));
         }
+    }
+
+    public ImagePlus readAsImageJImage() {
+        return IJ.openImage(getImagePath().toString());
     }
 }

@@ -8,6 +8,7 @@ import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionProjectTemplatesChange
 import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionedImagePropertyUpdatedEvent;
 import de.mrnotsoevil.sdcaptionstudio.api.events.SDCaptionedImagePropertyUpdatedEventListener;
 import de.mrnotsoevil.sdcaptionstudio.ui.SDCaptionProjectWorkbench;
+import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionEditor;
 import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionFlexContentPanel;
 import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionProjectWorkbenchPanel;
 import de.mrnotsoevil.sdcaptionstudio.ui.templatemanager.SDCaptionTemplateManagerPanel;
@@ -47,8 +48,8 @@ import java.util.List;
 public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbenchPanel implements SDCaptionedImagePropertyUpdatedEventListener, SDCaptionProjectTemplatesChangedEventListener {
     private final SDCaptionSingleImageView view;
     private final JIPipeImageViewer imageViewer;
-    private final RSyntaxTextArea captionEditor;
-    private final RSyntaxTextArea captionPreview;
+    private final SDCaptionEditor captionEditor;
+    private final SDCaptionEditor captionPreview;
     private final JButton saveButton = new JButton("Save", UIUtils.getIconFromResources("actions/save.png"));
     private final Icon autoSaveDefaultIcon = UIUtils.getIconFromResources("actions/view-refresh.png");
     private final NewThrobberIcon autoSaveSavingIcon = new NewThrobberIcon(this);
@@ -72,21 +73,8 @@ public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbench
         });
         this.captionSaveTimer.setRepeats(false);
 
-
-        SDCaptionSyntaxTokenMaker tokenMaker = new SDCaptionSyntaxTokenMaker();
-        TokenMakerFactory tokenMakerFactory = new TokenMakerFactory() {
-            @Override
-            protected TokenMaker getTokenMakerImpl(String key) {
-                return tokenMaker;
-            }
-
-            @Override
-            public Set<String> keySet() {
-                return Collections.singleton("text/caption");
-            }
-        };
-        this.captionEditor = createCaptionEditor();
-        this.captionPreview = createCaptionEditor();
+        this.captionEditor = new SDCaptionEditor(workbench);
+        this.captionPreview = new SDCaptionEditor(workbench);
         this.templateManagerPanel = new SDCaptionTemplateManagerPanel(getProjectWorkbench());
 
         // Remove the 2d/3d switcher
@@ -97,22 +85,6 @@ public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbench
 
         initialize();
 
-    }
-
-    private static RSyntaxTextArea createCaptionEditor() {
-        SDCaptionSyntaxTokenMaker tokenMaker = new SDCaptionSyntaxTokenMaker();
-        TokenMakerFactory tokenMakerFactory = new TokenMakerFactory() {
-            @Override
-            protected TokenMaker getTokenMakerImpl(String key) {
-                return tokenMaker;
-            }
-
-            @Override
-            public Set<String> keySet() {
-                return Collections.singleton("text/caption");
-            }
-        };
-        return new RSyntaxTextArea(new RSyntaxDocument(tokenMakerFactory, "text/caption"));
     }
 
     private void saveCaptionImmediately() {
@@ -227,24 +199,12 @@ public class SDCaptionSingleImageCaptionEditor extends SDCaptionProjectWorkbench
     }
 
     private void initializeCaptionPreview(DocumentTabPane sideBar) {
-        SDCaptionUtils.applyThemeToCodeEditor(captionPreview);
-        captionPreview.setLineWrap(true);
-        captionPreview.setWrapStyleWord(false);
-        captionPreview.setTabSize(4);
-        captionPreview.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 14));
-        captionPreview.setBackground(UIManager.getColor("TextArea.background"));
         captionPreview.setEditable(false);
         sideBar.addTab("Preview", UIUtils.getIconFromResources("actions/search.png"),
                 new RTextScrollPane(captionPreview), DocumentTabPane.CloseMode.withoutCloseButton);
     }
 
     private void initializeCaptionEditor(SDCaptionFlexContentPanel promptEditorContentPanel) {
-        SDCaptionUtils.applyThemeToCodeEditor(captionEditor);
-        captionEditor.setLineWrap(true);
-        captionEditor.setWrapStyleWord(false);
-        captionEditor.setTabSize(4);
-        captionEditor.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 14));
-        captionEditor.setBackground(UIManager.getColor("TextArea.background"));
         captionEditor.setHighlightCurrentLine(true);
         captionEditor.getDocument().addDocumentListener(new DocumentChangeListener() {
             @Override

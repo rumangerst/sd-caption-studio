@@ -1,5 +1,6 @@
 package de.mrnotsoevil.sdcaptionstudio.ui;
 
+import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionBackupRun;
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionEditorPlugin;
 import de.mrnotsoevil.sdcaptionstudio.api.SDCaptionProject;
 import de.mrnotsoevil.sdcaptionstudio.ui.components.SDCaptionProjectWorkbenchPanel;
@@ -14,6 +15,7 @@ import org.hkijena.jipipe.ui.components.MemoryStatusUI;
 import org.hkijena.jipipe.ui.components.tabs.DocumentTabPane;
 import org.hkijena.jipipe.ui.notifications.NotificationButton;
 import org.hkijena.jipipe.ui.notifications.WorkbenchNotificationInboxUI;
+import org.hkijena.jipipe.ui.running.JIPipeRunExecuterUI;
 import org.hkijena.jipipe.ui.running.JIPipeRunnerQueueButton;
 import org.hkijena.jipipe.ui.settings.JIPipeApplicationSettingsUI;
 import org.hkijena.jipipe.utils.UIUtils;
@@ -169,8 +171,27 @@ public class SDCaptionProjectWorkbench extends JPanel implements JIPipeWorkbench
             project.setSaveCaptionsOnProjectSave(saveCaptionsOnProjectSaveToggle.isSelected());
         });
         menuBar.add(saveCaptionsOnProjectSaveToggle);
+
+
+        JButton backupButton = new JButton("Backup", UIUtils.getIconFromResources("actions/backup.png"));
+        backupButton.addActionListener(e -> backupToZip());
+        UIUtils.setStandardButtonBorder(backupButton);
+        menuBar.add(backupButton);
+
         menuBar.add(new JIPipeRunnerQueueButton(this));
         menuBar.add(new NotificationButton(this));
+    }
+
+    public void backupToZip() {
+        Path path = FileChooserSettings.saveFile(this, FileChooserSettings.LastDirectoryKey.External, "Save backup", UIUtils.EXTENSION_FILTER_ZIP);
+        if(path != null) {
+            if(path.startsWith(getProject().getWorkDirectory())) {
+                JOptionPane.showMessageDialog(this, "Please store backups outside the image directory!", "Backup", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            SDCaptionBackupRun run = new SDCaptionBackupRun(getProject(), path);
+            JIPipeRunExecuterUI.runInDialog(this, run);
+        }
     }
 
     private void openDirectory() {
