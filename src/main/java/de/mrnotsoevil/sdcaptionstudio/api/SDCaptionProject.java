@@ -3,6 +3,11 @@ package de.mrnotsoevil.sdcaptionstudio.api;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.opencsv.CSVParser;
+import com.opencsv.CSVParserBuilder;
+import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
+import com.opencsv.exceptions.CsvValidationException;
 import de.mrnotsoevil.sdcaptionstudio.api.events.*;
 import de.mrnotsoevil.sdcaptionstudio.ui.utils.SDCaptionUtils;
 import ij.IJ;
@@ -14,6 +19,8 @@ import org.scijava.Disposable;
 
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.IOException;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,11 +35,14 @@ public class SDCaptionProject implements Disposable {
             = new SDCaptionProjectReloadedEventEmitter();
     private final SDCaptionProjectTemplatesChangedEventEmitter projectTemplatesChangedEventEmitter
             = new SDCaptionProjectTemplatesChangedEventEmitter();
+    private final SDCaptionProjectTagsChangedEventEmitter projectTagsChangedEventEmitter
+            = new SDCaptionProjectTagsChangedEventEmitter();
     private Map<String, SDCaptionedImage> images = new HashMap<>();
     private Path storagePath;
     private Path workDirectory;
     private Path projectFilePath;
     private Map<String, SDCaptionTemplate> templates = new HashMap<>();
+    private List<SDCaptionAutocompleteTag> tags = new ArrayList<>();
 
     private boolean saveCaptionsOnProjectSave = true;
 
@@ -95,6 +105,20 @@ public class SDCaptionProject implements Disposable {
             template.setProject(this);
         }
         projectTemplatesChangedEventEmitter.emit(new SDCaptionProjectTemplatesChangedEvent(this));
+    }
+
+    @JsonGetter("tags")
+    public List<SDCaptionAutocompleteTag> getTags() {
+        return tags;
+    }
+
+    @JsonSetter("tags")
+    public void setTags(List<SDCaptionAutocompleteTag> tags) {
+        this.tags = tags;
+        projectTagsChangedEventEmitter.emit(new SDCaptionProjectTagsChangedEvent(this));
+        for (SDCaptionAutocompleteTag tag : tags) {
+            tag.setProject(this);
+        }
     }
 
     public SDCaptionTemplate createTemplate(String key, String content) {
@@ -222,6 +246,10 @@ public class SDCaptionProject implements Disposable {
 
     public SDCaptionProjectTemplatesChangedEventEmitter getProjectTemplatesChangedEventEmitter() {
         return projectTemplatesChangedEventEmitter;
+    }
+
+    public SDCaptionProjectTagsChangedEventEmitter getProjectTagsChangedEventEmitter() {
+        return projectTagsChangedEventEmitter;
     }
 
     public SDCaptionProjectReloadedEventEmitter getProjectReloadedEventEmitter() {
@@ -401,5 +429,109 @@ public class SDCaptionProject implements Disposable {
         List<SDCaptionedImage> images = new ArrayList<>(getImages().values());
         images.sort(Comparator.comparing(SDCaptionedImage::getName, NaturalOrderComparator.INSTANCE));
         return images;
+    }
+
+    public int importTagsFromString(String csvString, String source) {
+        Set<String> usedTags = new HashSet<>();
+        for (SDCaptionAutocompleteTag tag : tags) {
+            usedTags.add(tag.getKey());
+        }
+
+
+        int count = 0;
+        // First try the auto1111 plugin's format
+        try {
+            CSVParser parser = new CSVParserBuilder()
+                    .withSeparator(',')
+                    .withIgnoreQuotations(true)
+                    .build();
+
+            CSVReader csvReader = new CSVReaderBuilder(new StringReader(csvString))
+                    .withSkipLines(0)
+                    .withCSVParser(parser)
+                    .build();
+
+            String[] line;
+            while ((line = csvReader.readNext()) != null) {
+                if(line.length == 1) {
+                    throw new IllegalArgumentException("Invalid format!");
+                }
+                String tag = line[0].trim();
+                String alternatives = line.length > 3 ? line[3] : "";
+
+                if(!tag.isEmpty()) {
+                    // Standard case 1
+                    if(!usedTags.contains(tag)) {
+                        SDCaptionAutocompleteTag instance = new SDCaptionAutocompleteTag();
+                        instance.setKey(tag);
+                        instance.setSource(source);
+                        instance.setProject(this);
+
+                        // Add and register
+                        tags.add(instance);
+                        usedTags.add(tag);
+                        ++count;
+                    }
+
+                    // Resolve alternatives
+                    if(!alternatives.isEmpty()) {
+                        for (String alternative : alternatives.split(",")) {
+                            String trimmed = alternative.trim();
+                            if(!usedTags.contains(trimmed)) {
+                                SDCaptionAutocompleteTag alternativeInstance = new SDCaptionAutocompleteTag();
+                                alternativeInstance.setKey(trimmed);
+                                alternativeInstance.setReplacement(tag);
+                                alternativeInstance.setSource(source);
+                                alternativeInstance.setProject(this);
+
+                                tags.add(alternativeInstance);
+                                usedTags.add(trimmed);
+                                ++count;
+                            }
+                        }
+                    }
+                }
+                else if(!alternatives.isEmpty()) {
+                    // Weird case where alternatives are mapped to empty?
+                    // We just add them as tag
+                    for (String alternative : alternatives.split(",")) {
+                        String trimmed = alternative.trim();
+                        if(!usedTags.contains(trimmed)) {
+                            SDCaptionAutocompleteTag alternativeInstance = new SDCaptionAutocompleteTag();
+                            alternativeInstance.setKey(trimmed);
+                            alternativeInstance.setSource(source);
+                            alternativeInstance.setProject(this);
+
+                            tags.add(alternativeInstance);
+                            usedTags.add(trimmed);
+                            ++count;
+                        }
+                    }
+                }
+            }
+        } catch (CsvValidationException | IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        projectTagsChangedEventEmitter.emit(new SDCaptionProjectTagsChangedEvent(this));
+        return count;
+    }
+
+    public int importTagsFromFile(Path csvPath) {
+        try {
+            return importTagsFromString(new String(Files.readAllBytes(csvPath), StandardCharsets.UTF_8), csvPath.getFileName().toString());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void removeTags(List<SDCaptionAutocompleteTag> toRemove) {
+        tags.removeAll(toRemove);
+        projectTagsChangedEventEmitter.emit(new SDCaptionProjectTagsChangedEvent(this));
+    }
+
+    public void clearTags() {
+        tags.clear();
+        projectTagsChangedEventEmitter.emit(new SDCaptionProjectTagsChangedEvent(this));
     }
 }

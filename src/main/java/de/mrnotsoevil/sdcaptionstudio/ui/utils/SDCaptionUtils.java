@@ -7,10 +7,17 @@ import org.hkijena.jipipe.utils.JIPipeResourceManager;
 import org.hkijena.jipipe.utils.ResourceUtils;
 import org.hkijena.jipipe.utils.StringUtils;
 import org.hkijena.jipipe.utils.UIUtils;
+import org.reflections.Reflections;
+import org.reflections.scanners.ResourcesScanner;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
 
 import javax.swing.*;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class SDCaptionUtils {
 
@@ -78,6 +85,22 @@ public class SDCaptionUtils {
             name = name.replace(c, '_');
         }
         return name.trim();
+    }
+
+    public static Set<String> walkInternalResourceFolder(String folder) {
+        String globalFolder = RESOURCES.getBasePath() + "/" + folder;
+        Reflections reflections = new Reflections(new ConfigurationBuilder()
+                .setUrls(ClasspathHelper.forPackage("de.mrnotsoevil.sdcaptionstudio"))
+                .setScanners(new ResourcesScanner()));
+
+        Set<String> allResources = reflections.getResources(Pattern.compile(".*"));
+        allResources = allResources.stream().map(s -> {
+            if (!s.startsWith("/"))
+                return "/" + s;
+            else
+                return s;
+        }).collect(Collectors.toSet());
+        return allResources.stream().filter(s -> s.startsWith(globalFolder)).collect(Collectors.toSet());
     }
 
     public static MarkdownDocument getDocumentation(String name) {

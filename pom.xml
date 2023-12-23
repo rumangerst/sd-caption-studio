@@ -59,6 +59,11 @@
                 <artifactId>jipipe-annotation</artifactId>
                 <version>2.0.0</version>
             </dependency>
+            <dependency>
+                <groupId>com.opencsv</groupId>
+                <artifactId>opencsv</artifactId>
+                <version>5.2</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -77,6 +82,10 @@
         <dependency>
             <groupId>org.scijava</groupId>
             <artifactId>script-editor</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
         </dependency>
     </dependencies>
 
